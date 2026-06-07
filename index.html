@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SNS副業ダッシュボード</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">iPhone / iPad対応・ブラウザ内保存</p>
+      <h1>SNS副業ダッシュボード</h1>
+      <p class="hero-text">投稿、問い合わせ、作業予定、売上をサンプルデータから管理できます。入力内容はこのブラウザ内にだけ保存されます。</p>
+    </div>
+    <div class="hero-actions">
+      <button id="exportCsv" class="primary-button">CSV出力</button>
+      <button id="resetSamples" class="ghost-button">サンプルに戻す</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="summary-grid" aria-label="月別集計">
+      <article class="summary-card accent">
+        <span>月別売上</span>
+        <strong id="monthlySales">¥0</strong>
+        <small id="monthlyLabel">-</small>
+      </article>
+      <article class="summary-card">
+        <span>月別利益</span>
+        <strong id="monthlyProfit">¥0</strong>
+        <small>売上 - 原価を自動計算</small>
+      </article>
+      <article class="summary-card">
+        <span>未対応問い合わせ</span>
+        <strong id="openInquiries">0件</strong>
+        <small>早めの返信が必要</small>
+      </article>
+      <article class="summary-card">
+        <span>作業予定</span>
+        <strong id="upcomingWorks">0件</strong>
+        <small>今日以降の予定</small>
+      </article>
+    </section>
+
+    <section class="form-card" aria-labelledby="formTitle">
+      <div class="section-heading compact">
+        <div>
+          <p class="eyebrow">新規登録</p>
+          <h2 id="formTitle">副業・SNS管理データを追加</h2>
+        </div>
+        <p class="save-note" id="saveStatus">自動保存：待機中</p>
+      </div>
+      <form id="recordForm" class="record-form">
+        <label>投稿日<input type="date" name="postedAt" required /></label>
+        <label>媒体
+          <select name="media" required>
+            <option value="Instagram">Instagram</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Googleビジネスプロフィール">Googleビジネスプロフィール</option>
+          </select>
+        </label>
+        <label>投稿ステータス
+          <select name="postStatus" required>
+            <option value="下書き">下書き</option>
+            <option value="予約投稿">予約投稿</option>
+            <option value="投稿済み">投稿済み</option>
+          </select>
+        </label>
+        <label>対応状況
+          <select name="responseStatus" required>
+            <option value="未対応">未対応</option>
+            <option value="対応中">対応中</option>
+            <option value="返信済み">返信済み</option>
+            <option value="完了">完了</option>
+          </select>
+        </label>
+        <label class="wide">投稿タイトル<input type="text" name="title" maxlength="60" placeholder="例：週末キャンペーン告知" required /></label>
+        <label class="wide">投稿本文<textarea name="body" rows="3" placeholder="投稿内容のメモ" required></textarea></label>
+        <label class="wide">Canva画像リンク<input type="text" name="canvaUrl" placeholder="例：Canvaサンプルリンク（未連携）" /></label>
+        <label>問い合わせ日<input type="date" name="inquiryAt" /></label>
+        <label class="wide">問い合わせ内容<textarea name="inquiry" rows="2" placeholder="問い合わせがない場合は空欄でOK"></textarea></label>
+        <label>作業予定日<input type="date" name="workDate" /></label>
+        <label class="wide">作業内容<textarea name="workDetail" rows="2" placeholder="例：画像作成、返信、レポート作成"></textarea></label>
+        <label>売上金額<input type="number" name="sales" min="0" inputmode="numeric" value="0" /></label>
+        <label>原価<input type="number" name="cost" min="0" inputmode="numeric" value="0" /></label>
+        <div class="profit-preview" aria-live="polite">
+          <span>利益自動計算</span>
+          <strong id="profitPreview">¥0</strong>
+        </div>
+        <label class="wide">改善メモ<textarea name="memo" rows="2" placeholder="次回改善したいこと"></textarea></label>
+        <button class="primary-button form-submit" type="submit">ブラウザに保存</button>
+      </form>
+    </section>
+
+    <section class="toolbar" aria-label="表示切り替え">
+      <label>
+        月で絞り込み
+        <select id="monthFilter"></select>
+      </label>
+      <div class="tabs" role="tablist" aria-label="管理カテゴリ">
+        <button class="tab active" data-view="posts">投稿</button>
+        <button class="tab" data-view="inquiries">問い合わせ</button>
+        <button class="tab" data-view="works">作業予定</button>
+        <button class="tab" data-view="sales">売上</button>
+      </div>
+    </section>
+
+    <section class="content-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow" id="viewEyebrow">投稿管理</p>
+          <h2 id="viewTitle">投稿一覧</h2>
+        </div>
+        <p id="viewCount" class="count-badge">0件</p>
+      </div>
+      <div id="list" class="card-list"></div>
+    </section>
+  </main>
+
+  <template id="itemTemplate">
+    <article class="item-card">
+      <div class="item-topline">
+        <span class="pill"></span>
+        <span class="date"></span>
+      </div>
+      <h3></h3>
+      <p class="description"></p>
+      <dl class="meta-grid"></dl>
+      <p class="memo"></p>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
