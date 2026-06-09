@@ -23,7 +23,7 @@ body {
   color: var(--text);
 }
 
-button, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 
 .hero {
   display: flex;
@@ -121,7 +121,7 @@ h1 {
   min-width: 12rem;
 }
 
-select {
+input, select, textarea {
   border: 1px solid var(--line);
   border-radius: 0.9rem;
   background: white;
@@ -165,6 +165,85 @@ select {
 
 .section-heading h2 { margin-bottom: 0; }
 .count-badge { color: var(--muted); font-weight: 700; margin: 0; }
+
+
+.entry-form {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #f8f9fc;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+}
+
+.form-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.form-heading h3 { margin-bottom: 0; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.form-grid label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.86rem;
+  font-weight: 800;
+  gap: 0.4rem;
+}
+
+.form-grid input,
+.form-grid textarea {
+  background: white;
+  color: var(--text);
+  width: 100%;
+}
+
+.form-grid textarea {
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.ghost-button,
+.danger-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+  white-space: nowrap;
+}
+
+.ghost-button {
+  background: white;
+  color: var(--primary);
+}
+
+.danger-button {
+  background: #fff1f1;
+  border-color: #ffd5d5;
+  color: #c03535;
+}
+
+.item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
 
 .card-list {
   display: grid;
@@ -255,6 +334,7 @@ select {
   .toolbar { align-items: stretch; flex-direction: column; }
   .toolbar label { min-width: 0; }
   .card-list { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 520px) {
@@ -263,6 +343,7 @@ select {
   .summary-grid { grid-template-columns: 1fr; }
   .tabs { margin: 0 -0.2rem; padding: 0 0.2rem 0.35rem; }
   .tab { flex: 1 0 auto; }
-  .section-heading { align-items: stretch; flex-direction: column; }
+  .form-actions, .item-actions { flex-direction: column; }
+  .section-heading, .form-heading { align-items: stretch; flex-direction: column; }
   .meta-grid { grid-template-columns: 1fr; }
 }
