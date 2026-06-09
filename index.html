@@ -11,7 +11,7 @@
     <div>
       <p class="eyebrow">iPhone / iPad対応</p>
       <h1>SNS副業ダッシュボード</h1>
-      <p class="hero-text">投稿、問い合わせ、作業予定、売上をサンプルデータでまとめて管理できます。</p>
+      <p class="hero-text">投稿、問い合わせ、作業予定、売上を入力・保存し、編集やCSV出力までまとめて管理できます。</p>
     </div>
     <button id="exportCsv" class="primary-button">CSV出力</button>
   </header>
@@ -61,6 +61,19 @@
         </div>
         <p id="viewCount" class="count-badge">0件</p>
       </div>
+      <form id="entryForm" class="entry-form" autocomplete="off">
+        <div class="form-heading">
+          <div>
+            <p class="eyebrow" id="formEyebrow">新規追加</p>
+            <h3 id="formTitle">投稿を追加</h3>
+          </div>
+          <button type="button" id="cancelEdit" class="ghost-button" hidden>編集をキャンセル</button>
+        </div>
+        <div id="formFields" class="form-grid"></div>
+        <div class="form-actions">
+          <button type="submit" id="saveEntry" class="primary-button">保存する</button>
+        </div>
+      </form>
       <div id="list" class="card-list"></div>
     </section>
   </main>
@@ -75,6 +88,10 @@
       <p class="description"></p>
       <dl class="meta-grid"></dl>
       <p class="memo"></p>
+      <div class="item-actions">
+        <button type="button" class="ghost-button edit-button">編集</button>
+        <button type="button" class="danger-button delete-button">削除</button>
+      </div>
     </article>
   </template>
 
