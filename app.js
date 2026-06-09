@@ -121,10 +121,10 @@ function normalizeRecord(record) {
 }
 
 function loadRecords() {
-  const savedRecords = localStorage.getItem(storageKey);
-  if (!savedRecords) return sampleRecords.map(normalizeRecord);
-
   try {
+    const savedRecords = localStorage.getItem(storageKey);
+    if (!savedRecords) return sampleRecords.map(normalizeRecord);
+
     const parsedRecords = JSON.parse(savedRecords);
     if (Array.isArray(parsedRecords)) return parsedRecords.map(normalizeRecord);
   } catch (error) {
@@ -135,7 +135,11 @@ function loadRecords() {
 }
 
 function saveRecords() {
-  localStorage.setItem(storageKey, JSON.stringify(records));
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(records));
+  } catch (error) {
+    console.warn("保存データの書き込みに失敗しました。", error);
+  }
 }
 
 function profit(record) {
