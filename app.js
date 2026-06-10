@@ -135,6 +135,10 @@ const yen = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY",
 const dateFormat = new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", weekday: "short" });
 
 const monthFilter = document.querySelector("#monthFilter");
+const monthlyLabel = document.querySelector("#monthlyLabel");
+const profitLabel = document.querySelector("#profitLabel");
+const inquiryLabel = document.querySelector("#inquiryLabel");
+const workLabel = document.querySelector("#workLabel");
 const list = document.querySelector("#list");
 const template = document.querySelector("#itemTemplate");
 const entryForm = document.querySelector("#entryForm");
@@ -149,8 +153,16 @@ function createId() {
   return `record-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function todayISO() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function blankRecord() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   return {
     id: createId(),
     postedAt: today,
@@ -166,7 +178,8 @@ function blankRecord() {
     sales: 0,
     cost: 0,
     responseStatus: "未対応",
-    memo: ""
+    memo: "",
+    recordType: ""
   };
 }
 
@@ -193,7 +206,23 @@ function profit(record) {
 }
 
 function monthOf(dateString) {
-  return dateString.slice(0, 7);
+  return typeof dateString === "string" && dateString.length >= 7 ? dateString.slice(0, 7) : "";
+}
+
+function hasMonth(record, dateKey, month) {
+  return month === "all" || monthOf(record[dateKey]) === month;
+}
+
+function isSalesRecord(record) {
+  return record.recordType === "sales" || record.sales > 0 || record.cost > 0;
+}
+
+function isInquiryRecord(record) {
+  return record.recordType === "inquiries" || Boolean(record.inquiry && record.inquiry.trim());
+}
+
+function isWorkRecord(record) {
+  return record.recordType === "works" || Boolean(record.workDetail && record.workDetail.trim());
 }
 
 function displayDate(dateString) {
@@ -206,7 +235,7 @@ function filteredRecords() {
 }
 
 function setupMonthFilter() {
-  const months = [...new Set(records.flatMap((record) => [record.postedAt, record.inquiryAt, record.workDate].map(monthOf)))].sort().reverse();
+  const months = [...new Set(records.flatMap((record) => [record.postedAt, record.inquiryAt, record.workDate].map(monthOf)).filter(Boolean))].sort().reverse();
   const selected = months.includes(currentMonth) ? currentMonth : "all";
   monthFilter.innerHTML = ["<option value=\"all\">すべての月</option>", ...months.map((month) => `<option value="${month}">${month.replace("-", "年")}月</option>`)].join("");
   monthFilter.value = selected;
@@ -214,19 +243,26 @@ function setupMonthFilter() {
 }
 
 function updateSummary() {
-  const summaryMonth = currentMonth === "all" ? monthOf(new Date().toISOString()) : currentMonth;
-  const monthlyRecords = records.filter((record) => monthOf(record.postedAt) === summaryMonth);
-  const sales = monthlyRecords.reduce((sum, record) => sum + record.sales, 0);
-  const profitTotal = monthlyRecords.reduce((sum, record) => sum + profit(record), 0);
-  const openInquiries = records.filter((record) => record.responseStatus !== "完了" && record.responseStatus !== "返信済み").length;
-  const today = new Date().toISOString().slice(0, 10);
-  const works = records.filter((record) => record.workDate >= today).length;
+  const summaryMonth = currentMonth === "all" ? "all" : currentMonth;
+  const salesRecords = records.filter((record) => isSalesRecord(record) && hasMonth(record, "postedAt", summaryMonth));
+  const inquiryRecords = records.filter((record) => isInquiryRecord(record) && hasMonth(record, "inquiryAt", summaryMonth));
+  const today = todayISO();
+  const workRecords = records.filter((record) => isWorkRecord(record) && hasMonth(record, "workDate", summaryMonth));
+
+  const sales = salesRecords.reduce((sum, record) => sum + record.sales, 0);
+  const profitTotal = salesRecords.reduce((sum, record) => sum + profit(record), 0);
+  const openInquiries = inquiryRecords.filter((record) => record.responseStatus === "未対応").length;
+  const works = workRecords.filter((record) => record.workDate >= today).length;
+  const label = summaryMonth === "all" ? "すべての月" : `${summaryMonth.replace("-", "年")}月`;
 
   document.querySelector("#monthlySales").textContent = yen.format(sales);
   document.querySelector("#monthlyProfit").textContent = yen.format(profitTotal);
-  document.querySelector("#monthlyLabel").textContent = `${summaryMonth.replace("-", "年")}月の投稿ベース`;
+  monthlyLabel.textContent = `${label}の売上データ合計`;
+  profitLabel.textContent = `${label}の売上 - 原価`;
   document.querySelector("#openInquiries").textContent = `${openInquiries}件`;
+  inquiryLabel.textContent = `${label}の未対応のみ`;
   document.querySelector("#upcomingWorks").textContent = `${works}件`;
+  workLabel.textContent = `${label} / 今日以降`;
 }
 
 function inputType(field) {
@@ -274,6 +310,7 @@ function collectFormRecord() {
   }
 
   next.id = editingId || createId();
+  next.recordType = next.recordType || currentView;
   return normalizeRecord(next);
 }
 
