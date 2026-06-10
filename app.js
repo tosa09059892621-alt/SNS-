@@ -1,4 +1,5 @@
 const STORAGE_KEY = "snsSidejobDashboardRecords";
+const INQUIRY_STORAGE_KEY = "snsSidejobDashboardInquiries";
 
 const defaultRecords = [
   {
@@ -385,11 +386,33 @@ function normalizeRecord(record) {
     cost: Number(record.cost) || 0,
     inquiryCount: Number(record.inquiryCount) || 0
   };
-  normalized.postStatus = normalizePostStatus(normalized.postStatus);
+  normalized.recordType = ["posts", "inquiries", "works", "sales"].includes(normalized.recordType) ? normalized.recordType : "";
   normalized.responseStatus = normalizeResponseStatus(normalized.responseStatus);
   normalized.inquirySource = inquirySourceOptions.includes(normalized.inquirySource) ? normalized.inquirySource : (inquirySourceOptions.includes(normalized.media) ? normalized.media : "Instagram");
   normalized.vehicleInspection = vehicleInspectionOptions.includes(normalized.vehicleInspection) ? normalized.vehicleInspection : "未確認";
   normalized.leadRank = leadRankOptions.includes(normalized.leadRank) ? normalized.leadRank : "B";
+
+  if (normalized.recordType === "inquiries") {
+    normalized.postedAt = "";
+    normalized.postStatus = "";
+    normalized.reactionMemo = "";
+    normalized.inquiryCount = 0;
+    normalized.workDate = "";
+    normalized.workDetail = "";
+    normalized.sales = 0;
+    normalized.cost = 0;
+    normalized.body = "";
+    normalized.generatedCopies = "";
+    normalized.canvaHeadline = "";
+    normalized.canvaSubcopy = "";
+    normalized.canvaNote = "";
+    normalized.canvaUrl = "";
+    normalized.serviceAreas = "";
+    normalized.media = normalized.inquirySource || "Instagram";
+  } else {
+    normalized.postStatus = normalizePostStatus(normalized.postStatus);
+  }
+
   return normalized;
 }
 
@@ -484,10 +507,36 @@ function buildGeneratedCopiesFromSections(sections) {
   return [`【Instagram用】\n${sections.Instagram || ""}`, `【X用】\n${sections.X || ""}`, `【LINE用】\n${sections["LINE配信"] || ""}`].join("\n\n---\n\n");
 }
 
+function readStoredArray(key) {
+  const saved = JSON.parse(localStorage.getItem(key));
+  return Array.isArray(saved) ? saved : [];
+}
+
+function hasLegacyInquiryOnlyFields(record) {
+  if (record.recordType) return false;
+  if (!record.inquiry || !String(record.inquiry).trim()) return false;
+  const inquiryFields = ["inquirySource", "region", "carModel", "carCondition", "vehicleInspection", "pickupTiming", "contactMethod", "nextContactAt", "leadRank"];
+  const hasInquiryManagementField = inquiryFields.some((field) => Boolean(record[field] && String(record[field]).trim()));
+  const hasPostBody = Boolean(record.body && String(record.body).trim());
+  const hasWorkOrSales = Boolean(record.workDetail && String(record.workDetail).trim()) || Number(record.sales) > 0 || Number(record.cost) > 0;
+  return hasInquiryManagementField && !hasPostBody && !hasWorkOrSales;
+}
+
 function loadRecords() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (Array.isArray(saved)) return saved.map(normalizeRecord);
+    const storedRecords = readStoredArray(STORAGE_KEY);
+    const storedInquiries = readStoredArray(INQUIRY_STORAGE_KEY);
+    const mainRecords = storedRecords
+      .filter((record) => record.recordType !== "inquiries" && !hasLegacyInquiryOnlyFields(record))
+      .map(normalizeRecord);
+    const inquiryRecords = [
+      ...storedInquiries,
+      ...storedRecords.filter((record) => record.recordType === "inquiries" || hasLegacyInquiryOnlyFields(record))
+    ].map((record) => normalizeRecord({ ...record, recordType: "inquiries" }));
+
+    if (mainRecords.length > 0 || inquiryRecords.length > 0) {
+      return [...mainRecords, ...inquiryRecords];
+    }
   } catch (error) {
     console.warn("保存データを読み込めませんでした。サンプルデータを表示します。", error);
   }
@@ -495,7 +544,10 @@ function loadRecords() {
 }
 
 function saveRecords() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  const inquiryRecords = records.filter(isInquiryRecord).map((record) => normalizeRecord({ ...record, recordType: "inquiries" }));
+  const mainRecords = records.filter((record) => !isInquiryRecord(record)).map(normalizeRecord);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(mainRecords));
+  localStorage.setItem(INQUIRY_STORAGE_KEY, JSON.stringify(inquiryRecords));
 }
 
 function showCopyStatus(message = "コピーしました") {
@@ -544,7 +596,7 @@ function isSalesRecord(record) {
 }
 
 function isInquiryRecord(record) {
-  return record.recordType === "inquiries" || Boolean(record.inquiry && record.inquiry.trim());
+  return record.recordType === "inquiries";
 }
 
 function isWorkRecord(record) {
@@ -895,7 +947,7 @@ function collectFormRecord() {
   }
 
   next.id = editingId || createId();
-  next.recordType = editingId ? next.recordType || currentView : currentView;
+  next.recordType = currentView;
   return normalizeRecord(next);
 }
 
@@ -1233,6 +1285,9 @@ entryForm.addEventListener("submit", (event) => {
   } else {
     records = [nextRecord, ...records];
   }
+
+  const nextMonth = monthOf(nextRecord[views[currentView].dateKey]);
+  if (nextMonth && currentMonth !== "all" && currentMonth !== nextMonth) currentMonth = nextMonth;
 
   saveRecords();
   resetForm();

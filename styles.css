@@ -594,10 +594,14 @@ textarea[name="canvaNote"] {
 }
 
 .privacy-notice {
+  background: #f6f8ff;
+  border: 1px solid #dfe6ff;
+  border-radius: 0.9rem;
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.6;
   margin: 0.8rem 0 0;
+  padding: 0.65rem 0.75rem;
 }
 
 .inquiry-card {
