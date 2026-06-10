@@ -511,3 +511,124 @@ textarea[name="canvaNote"] {
   .meta-grid { grid-template-columns: 1fr; }
   .area-checkbox-grid { grid-template-columns: 1fr; }
 }
+
+.post-calendar {
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff7f0 100%);
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+}
+
+.calendar-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.calendar-heading h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.calendar-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+}
+
+.calendar-date {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.calendar-date strong {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.calendar-date span,
+.calendar-count {
+  background: #eef2ff;
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding: 0.28rem 0.55rem;
+  width: fit-content;
+}
+
+.calendar-body {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.calendar-body h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.calendar-body p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.calendar-media {
+  color: var(--accent) !important;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.post-management-controls {
+  display: grid;
+  gap: 0.65rem;
+  grid-column: 1 / -1;
+}
+
+.post-management-controls label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.35rem;
+}
+
+.post-management-controls textarea,
+.post-management-controls input {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  color: var(--text);
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  width: 100%;
+}
+
+.post-management-controls textarea {
+  line-height: 1.5;
+  resize: vertical;
+}
+
+@media (max-width: 1024px) {
+  .calendar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .calendar-heading { align-items: stretch; flex-direction: column; }
+  .calendar-grid { grid-template-columns: 1fr; }
+}

@@ -9,6 +9,8 @@ const defaultRecords = [
     body: "季節限定メニューと予約特典を紹介。ストーリーズにも再掲予定。",
     canvaUrl: "Canvaサンプルリンク：campaign-image（外部通信なし）",
     postStatus: "投稿済み",
+    reactionMemo: "保存数とプロフィール閲覧が増えた。",
+    inquiryCount: 2,
     inquiryAt: "2026-06-04",
     inquiry: "キャンペーンの予約方法を知りたい",
     workDate: "2026-06-10",
@@ -25,7 +27,9 @@ const defaultRecords = [
     title: "制作実績の紹介",
     body: "過去案件のビフォーアフターを紹介し、問い合わせ導線を設置。",
     canvaUrl: "Canvaサンプルリンク：portfolio-image（外部通信なし）",
-    postStatus: "予約投稿",
+    postStatus: "未投稿",
+    reactionMemo: "公開前。投稿後に反応を記録する。",
+    inquiryCount: 0,
     inquiryAt: "2026-06-09",
     inquiry: "同じ形式の投稿代行を依頼したい",
     workDate: "2026-06-14",
@@ -43,6 +47,8 @@ const defaultRecords = [
     body: "来店後のお客様へ口コミ投稿を促す短文を掲載。",
     canvaUrl: "Canvaサンプルリンク：review-image（外部通信なし）",
     postStatus: "投稿済み",
+    reactionMemo: "検索経由のクリックが増加。",
+    inquiryCount: 1,
     inquiryAt: "2026-05-24",
     inquiry: "Google投稿の更新頻度について相談したい",
     workDate: "2026-05-30",
@@ -59,7 +65,9 @@ const defaultRecords = [
     title: "よくある質問まとめ",
     body: "料金、納期、修正回数をカルーセルで説明。",
     canvaUrl: "Canvaサンプルリンク：faq-image（外部通信なし）",
-    postStatus: "下書き",
+    postStatus: "未投稿",
+    reactionMemo: "",
+    inquiryCount: 0,
     inquiryAt: "2026-06-16",
     inquiry: "画像だけの制作も可能か確認したい",
     workDate: "2026-06-20",
@@ -72,7 +80,7 @@ const defaultRecords = [
 ];
 
 const fieldLabels = {
-  postedAt: "投稿日",
+  postedAt: "投稿予定日",
   media: "媒体",
   title: "投稿タイトル",
   body: "投稿本文",
@@ -83,6 +91,8 @@ const fieldLabels = {
   canvaSubcopy: "Canva画像用：サブコピー",
   canvaNote: "Canva画像用：注意書き",
   postStatus: "投稿ステータス",
+  reactionMemo: "反応メモ",
+  inquiryCount: "問い合わせ件数",
   inquiryAt: "問い合わせ日",
   inquiry: "問い合わせ内容",
   workDate: "作業予定日",
@@ -99,9 +109,9 @@ const formConfigs = {
   posts: {
     eyebrow: "投稿を新規追加",
     title: "投稿フォーム",
-    fields: ["postedAt", "appealPattern", "media", "serviceAreas", "title", "body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "canvaUrl", "postStatus", "memo"],
+    fields: ["postedAt", "appealPattern", "media", "postStatus", "serviceAreas", "title", "body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "canvaUrl", "reactionMemo", "inquiryCount", "memo"],
     required: ["postedAt", "appealPattern", "media", "title"],
-    defaults: { postStatus: "下書き", areaPreset: "sapporoOtaru" }
+    defaults: { postStatus: "未投稿", inquiryCount: 0, areaPreset: "sapporoOtaru" }
   },
   inquiries: {
     eyebrow: "問い合わせを新規追加",
@@ -115,7 +125,7 @@ const formConfigs = {
     title: "作業予定フォーム",
     fields: ["workDate", "media", "workDetail", "title", "postStatus", "responseStatus", "memo"],
     required: ["workDate", "media", "workDetail"],
-    defaults: { postStatus: "下書き", responseStatus: "未対応", title: "作業予定から追加" }
+    defaults: { postStatus: "未投稿", responseStatus: "未対応", title: "作業予定から追加" }
   },
   sales: {
     eyebrow: "売上を新規追加",
@@ -240,7 +250,8 @@ const appealPatterns = {
   }
 };
 
-const mediaOptions = ["Instagram", "X", "LINE配信", "Facebook", "Googleビジネスプロフィール"];
+const mediaOptions = ["Instagram", "X", "LINE", "Facebook", "Googleビジネスプロフィール"];
+const postStatusOptions = ["未投稿", "投稿済み", "反応あり", "問い合わせあり"];
 
 const views = {
   posts: { eyebrow: "投稿管理", title: "投稿一覧", dateKey: "postedAt" },
@@ -263,6 +274,7 @@ const profitLabel = document.querySelector("#profitLabel");
 const inquiryLabel = document.querySelector("#inquiryLabel");
 const workLabel = document.querySelector("#workLabel");
 const list = document.querySelector("#list");
+const postCalendar = document.querySelector("#postCalendar");
 const template = document.querySelector("#itemTemplate");
 const entryForm = document.querySelector("#entryForm");
 const formFields = document.querySelector("#formFields");
@@ -305,7 +317,7 @@ function blankRecord() {
     title: "",
     body: "",
     canvaUrl: "",
-    postStatus: "下書き",
+    postStatus: "未投稿",
     inquiryAt: today,
     inquiry: "",
     workDate: today,
@@ -313,6 +325,8 @@ function blankRecord() {
     sales: 0,
     cost: 0,
     responseStatus: "未対応",
+    reactionMemo: "",
+    inquiryCount: 0,
     memo: "",
     areaPreset: "",
     serviceAreas: "",
@@ -325,8 +339,22 @@ function blankRecord() {
   };
 }
 
+function normalizePostStatus(status) {
+  if (postStatusOptions.includes(status)) return status;
+  if (["下書き", "予約投稿"].includes(status)) return "未投稿";
+  return "未投稿";
+}
+
 function normalizeRecord(record) {
-  return { ...blankRecord(), ...record, sales: Number(record.sales) || 0, cost: Number(record.cost) || 0 };
+  const normalized = {
+    ...blankRecord(),
+    ...record,
+    sales: Number(record.sales) || 0,
+    cost: Number(record.cost) || 0,
+    inquiryCount: Number(record.inquiryCount) || 0
+  };
+  normalized.postStatus = normalizePostStatus(normalized.postStatus);
+  return normalized;
 }
 
 function parseAreas(value) {
@@ -386,6 +414,7 @@ function createPostSet(patternKey, areas) {
     Instagram: instagram,
     X: x,
     "LINE配信": line,
+    LINE: line,
     canvaHeadline: `${summary}\n${pattern.canvaHeadline}`,
     canvaSubcopy: pattern.canvaSubcopy,
     canvaNote: safeNote
@@ -399,7 +428,7 @@ function createPostCopy(media, patternKey, areas) {
 
 function createGeneratedCopies(patternKey, areas) {
   const postSet = createPostSet(patternKey, areas);
-  return [`【Instagram用】\n${postSet.Instagram}`, `【X用】\n${postSet.X}`, `【LINE配信用】\n${postSet["LINE配信"]}`].join("\n\n---\n\n");
+  return [`【Instagram用】\n${postSet.Instagram}`, `【X用】\n${postSet.X}`, `【LINE用】\n${postSet.LINE}`].join("\n\n---\n\n");
 }
 
 function parseGeneratedCopies(value) {
@@ -407,8 +436,8 @@ function parseGeneratedCopies(value) {
   if (typeof value !== "string") return sections;
 
   const instagramMatch = value.match(/【Instagram用】\n([\s\S]*?)(?:\n\n---\n\n【X用】|$)/);
-  const xMatch = value.match(/【X用】\n([\s\S]*?)(?:\n\n---\n\n【LINE配信用】|$)/);
-  const lineMatch = value.match(/【LINE配信用】\n([\s\S]*)$/);
+  const xMatch = value.match(/【X用】\n([\s\S]*?)(?:\n\n---\n\n【LINE(?:配信)?用】|$)/);
+  const lineMatch = value.match(/【LINE(?:配信)?用】\n([\s\S]*)$/);
   sections.Instagram = instagramMatch?.[1]?.trim() || "";
   sections.X = xMatch?.[1]?.trim() || "";
   sections["LINE配信"] = lineMatch?.[1]?.trim() || "";
@@ -416,7 +445,7 @@ function parseGeneratedCopies(value) {
 }
 
 function buildGeneratedCopiesFromSections(sections) {
-  return [`【Instagram用】\n${sections.Instagram || ""}`, `【X用】\n${sections.X || ""}`, `【LINE配信用】\n${sections["LINE配信"] || ""}`].join("\n\n---\n\n");
+  return [`【Instagram用】\n${sections.Instagram || ""}`, `【X用】\n${sections.X || ""}`, `【LINE用】\n${sections["LINE配信"] || ""}`].join("\n\n---\n\n");
 }
 
 function loadRecords() {
@@ -528,7 +557,7 @@ function updateSummary() {
 
 function inputType(field) {
   if (["postedAt", "inquiryAt", "workDate"].includes(field)) return "date";
-  if (["sales", "cost"].includes(field)) return "number";
+  if (["sales", "cost", "inquiryCount"].includes(field)) return "number";
   return "text";
 }
 
@@ -606,7 +635,7 @@ function createGeneratedCopiesField(values) {
   const sectionInputs = [
     ["Instagram", "Instagram用投稿文"],
     ["X", "X用投稿文"],
-    ["LINE配信", "LINE配信用文章"]
+    ["LINE配信", "LINE用文章"]
   ].map(([key, label]) => {
     const section = document.createElement("div");
     section.className = "generated-copy-section";
@@ -643,8 +672,8 @@ function createField(field, values, config) {
   if (field === "generatedCopies") return createGeneratedCopiesField(values);
 
   const label = document.createElement("label");
-  const isLongText = ["body", "memo", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field);
-  const isSelect = field === "media" || field === "appealPattern";
+  const isLongText = ["body", "memo", "reactionMemo", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field);
+  const isSelect = ["media", "appealPattern", "postStatus"].includes(field);
   const input = isSelect ? document.createElement("select") : isLongText ? document.createElement("textarea") : document.createElement("input");
   label.textContent = fieldLabels[field];
   input.name = field;
@@ -657,6 +686,9 @@ function createField(field, values, config) {
   } else if (field === "appealPattern") {
     input.innerHTML = Object.entries(appealPatterns).map(([value, pattern]) => `<option value="${value}">${pattern.label}</option>`).join("");
     input.value = appealPatterns[values[field]] ? values[field] : "shakenExpired";
+  } else if (field === "postStatus") {
+    input.innerHTML = postStatusOptions.map((status) => `<option value="${status}">${status}</option>`).join("");
+    input.value = normalizePostStatus(values[field]);
   } else if (isLongText) {
     input.rows = field === "body" ? 7 : field.startsWith("canva") ? 3 : 3;
     if (["canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field)) label.classList.add("copy-output");
@@ -668,7 +700,7 @@ function createField(field, values, config) {
     input.type = inputType(field);
   }
 
-  if (["body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "memo"].includes(field)) label.classList.add("full-span");
+  if (["body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "reactionMemo", "memo"].includes(field)) label.classList.add("full-span");
 
   if (["canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field)) {
     const title = document.createElement("span");
@@ -817,7 +849,7 @@ function createWeeklyPosts() {
       media: "Instagram",
       title: `${index + 1}日目：${areaSummary(selectedAreas)}で${pattern.title}`,
       body: postSet.Instagram,
-      postStatus: "下書き",
+      postStatus: "未投稿",
       areaPreset: "",
       serviceAreas,
       appealPattern: patternKey,
@@ -855,14 +887,17 @@ function refreshScreen() {
 function metaFor(record) {
   if (currentView === "posts") {
     return [
-      ["媒体", record.media],
+      ["投稿予定日", displayDate(record.postedAt)],
+      ["投稿先", record.media],
       ["訴求パターン", selectedAppealPattern(record.appealPattern).label],
       ["投稿ステータス", record.postStatus],
+      ["問い合わせ件数", `${escapeHtml(record.inquiryCount)}件`],
       ["Canva見出し", record.canvaHeadline],
       ["Canvaサブコピー", record.canvaSubcopy],
       ["Canva注意書き", record.canvaNote],
       ["Canva画像リンク", record.canvaUrl],
       ["対応エリア", record.serviceAreas || "未選択"],
+      ["反応メモ", record.reactionMemo || "未入力"],
       ["対応状況", record.responseStatus]
     ];
   }
@@ -897,12 +932,85 @@ function textFor(record) {
   return { title: record.title, body: record.body, date: record.postedAt, pill: record.postStatus };
 }
 
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+}
+
+function renderPostCalendar(data) {
+  if (!postCalendar) return;
+  postCalendar.hidden = currentView !== "posts";
+  if (currentView !== "posts") {
+    postCalendar.innerHTML = "";
+    return;
+  }
+
+  const label = currentMonth === "all" ? "すべての月" : `${currentMonth.replace("-", "年")}月`;
+  const calendarCards = data.map((record) => `
+    <article class="calendar-card">
+      <div class="calendar-date">
+        <strong>${displayDate(record.postedAt)}</strong>
+        <span>${escapeHtml(record.postStatus)}</span>
+      </div>
+      <div class="calendar-body">
+        <p class="calendar-media">${escapeHtml(record.media)}</p>
+        <h3>${escapeHtml(record.title || "タイトル未入力")}</h3>
+        <p>${escapeHtml(record.reactionMemo || "反応メモ未入力")}</p>
+      </div>
+      <div class="calendar-count">問い合わせ ${escapeHtml(record.inquiryCount)}件</div>
+    </article>
+  `).join("");
+
+  postCalendar.innerHTML = `
+    <div class="calendar-heading">
+      <div>
+        <p class="eyebrow">投稿カレンダー</p>
+        <h3>投稿予定・投稿済み・反応を日付順で管理</h3>
+      </div>
+      <span class="count-badge">${label}</span>
+    </div>
+    <div class="calendar-grid">${calendarCards || '<p class="empty-state">表示できる投稿がありません。</p>'}</div>
+  `;
+}
+
+function createPostManagementControls(record) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "post-management-controls full-span";
+
+  const memoLabel = document.createElement("label");
+  memoLabel.textContent = "反応メモ";
+  const memoInput = document.createElement("textarea");
+  memoInput.className = "reaction-memo-input";
+  memoInput.value = record.reactionMemo || "";
+  memoInput.rows = 2;
+  memoInput.setAttribute("aria-label", `${record.title}の反応メモ`);
+  memoLabel.appendChild(memoInput);
+
+  const countLabel = document.createElement("label");
+  countLabel.textContent = "問い合わせ件数";
+  const countInput = document.createElement("input");
+  countInput.className = "inquiry-count-input";
+  countInput.type = "number";
+  countInput.min = "0";
+  countInput.step = "1";
+  countInput.value = record.inquiryCount;
+  countInput.setAttribute("aria-label", `${record.title}の問い合わせ件数`);
+  countLabel.appendChild(countInput);
+
+  wrapper.append(memoLabel, countLabel);
+  return wrapper;
+}
+
 function renderList() {
   const config = views[currentView];
-  const data = filteredRecords().sort((a, b) => b[config.dateKey].localeCompare(a[config.dateKey]));
+  const data = filteredRecords().sort((a, b) => {
+    const result = a[config.dateKey].localeCompare(b[config.dateKey]);
+    return result || a.title.localeCompare(b.title);
+  });
   document.querySelector("#viewEyebrow").textContent = config.eyebrow;
   document.querySelector("#viewTitle").textContent = config.title;
   document.querySelector("#viewCount").textContent = `${data.length}件`;
+  renderPostCalendar(data);
   list.innerHTML = "";
 
   if (data.length === 0) {
@@ -932,13 +1040,21 @@ function renderList() {
       metaGrid.appendChild(wrapper);
     });
 
+    const markPostedButton = node.querySelector(".mark-posted-button");
+    if (currentView === "posts") {
+      metaGrid.appendChild(createPostManagementControls(record));
+      markPostedButton.hidden = record.postStatus !== "未投稿";
+    } else {
+      markPostedButton.hidden = true;
+    }
+
     list.appendChild(node);
   });
 }
 
 function exportCsv() {
-  const header = ["投稿日", "媒体", "訴求パターン", "対応エリア", "投稿タイトル", "投稿本文", "Instagram/X/LINE用作成文", "Canva見出し", "Canvaサブコピー", "Canva注意書き", "Canva画像リンク", "投稿ステータス", "問い合わせ日", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "対応状況", "改善メモ"];
-  const rows = records.map((record) => [record.postedAt, record.media, selectedAppealPattern(record.appealPattern).label, record.serviceAreas, record.title, record.body, record.generatedCopies, record.canvaHeadline, record.canvaSubcopy, record.canvaNote, record.canvaUrl, record.postStatus, record.inquiryAt, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.responseStatus, record.memo]);
+  const header = ["投稿予定日", "投稿先", "訴求パターン", "対応エリア", "投稿タイトル", "投稿本文", "Instagram/X/LINE用作成文", "Canva見出し", "Canvaサブコピー", "Canva注意書き", "Canva画像リンク", "投稿ステータス", "反応メモ", "問い合わせ件数", "問い合わせ日", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "対応状況", "改善メモ"];
+  const rows = records.map((record) => [record.postedAt, record.media, selectedAppealPattern(record.appealPattern).label, record.serviceAreas, record.title, record.body, record.generatedCopies, record.canvaHeadline, record.canvaSubcopy, record.canvaNote, record.canvaUrl, record.postStatus, record.reactionMemo, record.inquiryCount, record.inquiryAt, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.responseStatus, record.memo]);
   const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
   const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -993,6 +1109,14 @@ list.addEventListener("click", (event) => {
   const record = records.find((item) => item.id === card.dataset.id);
   if (!record) return;
 
+  if (event.target.classList.contains("mark-posted-button")) {
+    records = records.map((item) => (item.id === record.id ? normalizeRecord({ ...item, postStatus: "投稿済み" }) : item));
+    saveRecords();
+    refreshScreen();
+    showCopyStatus("投稿ステータスを投稿済みにしました");
+    return;
+  }
+
   if (event.target.classList.contains("edit-button")) {
     editingId = record.id;
     renderForm(record);
@@ -1007,6 +1131,24 @@ list.addEventListener("click", (event) => {
     if (editingId === record.id) resetForm();
     refreshScreen();
   }
+});
+
+
+list.addEventListener("change", (event) => {
+  const card = event.target.closest(".item-card");
+  if (!card || !["reaction-memo-input", "inquiry-count-input"].some((name) => event.target.classList.contains(name))) return;
+  const record = records.find((item) => item.id === card.dataset.id);
+  if (!record) return;
+
+  records = records.map((item) => {
+    if (item.id !== record.id) return item;
+    const next = { ...item };
+    if (event.target.classList.contains("reaction-memo-input")) next.reactionMemo = event.target.value.trim();
+    if (event.target.classList.contains("inquiry-count-input")) next.inquiryCount = Number(event.target.value) || 0;
+    return normalizeRecord(next);
+  });
+  saveRecords();
+  refreshScreen();
 });
 
 document.querySelectorAll(".tab").forEach((button) => {
