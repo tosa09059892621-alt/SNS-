@@ -60,20 +60,31 @@ h1 {
   max-width: 38rem;
 }
 
-.primary-button {
+.primary-button,
+.secondary-button {
   border: 0;
-  background: var(--primary);
-  color: white;
   border-radius: 999px;
   padding: 0.9rem 1.25rem;
   font-weight: 700;
-  box-shadow: 0 12px 28px rgba(56, 103, 255, 0.28);
   cursor: pointer;
   white-space: nowrap;
 }
 
-.primary-button:active { transform: translateY(1px); }
+.primary-button {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 12px 28px rgba(56, 103, 255, 0.28);
+}
+
+.secondary-button {
+  background: #fff3e8;
+  border: 1px solid #ffd4b8;
+  color: #9a4f16;
+}
+
+.primary-button:active, .secondary-button:active { transform: translateY(1px); }
 .primary-button:hover { background: var(--primary-dark); }
+.secondary-button:hover { background: #ffe7d5; }
 
 .app-shell {
   width: min(1180px, calc(100% - 2rem));
@@ -279,16 +290,68 @@ textarea[name^="canva"] {
   position: relative;
 }
 
-.copy-output::after {
+.copy-field-title,
+.copy-section-title {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.auto-badge {
   background: #fff6df;
   border: 1px solid #f2d28a;
   border-radius: 999px;
   color: #8a5b00;
-  content: "自動作成";
   font-size: 0.7rem;
   font-weight: 900;
-  justify-self: start;
   padding: 0.16rem 0.5rem;
+}
+
+.copy-button {
+  background: white;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.35rem 0.75rem;
+}
+
+.copy-button:hover {
+  background: #eef2ff;
+}
+
+.generated-copy-panel {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.86rem;
+  font-weight: 800;
+  gap: 0.8rem;
+}
+
+.generated-copy-panel textarea {
+  color: var(--text);
+  font-weight: 400;
+}
+
+.generated-copy-section {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.generated-copy-section textarea {
+  min-height: 10rem;
+}
+
+.copy-status {
+  color: var(--success);
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 0.75rem 0 0;
+  min-height: 1.4rem;
+  text-align: right;
 }
 
 textarea[name="generatedCopies"] {
@@ -306,6 +369,7 @@ textarea[name="canvaNote"] {
 
 .form-actions {
   display: flex;
+  gap: 0.65rem;
   justify-content: flex-end;
   margin-top: 1rem;
 }
@@ -422,7 +486,7 @@ textarea[name="canvaNote"] {
 
 @media (max-width: 820px) {
   .hero { align-items: stretch; flex-direction: column; }
-  .primary-button { width: 100%; }
+  .primary-button, .secondary-button { width: 100%; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .toolbar { align-items: stretch; flex-direction: column; }
   .toolbar label { min-width: 0; }
@@ -442,6 +506,7 @@ textarea[name="canvaNote"] {
   .tabs { margin: 0 -0.2rem; padding: 0 0.2rem 0.35rem; }
   .tab { flex: 1 0 auto; }
   .form-actions, .item-actions { flex-direction: column; }
+  .copy-field-title, .copy-section-title { align-items: flex-start; flex-direction: column; }
   .section-heading, .form-heading { align-items: stretch; flex-direction: column; }
   .meta-grid { grid-template-columns: 1fr; }
   .area-checkbox-grid { grid-template-columns: 1fr; }
