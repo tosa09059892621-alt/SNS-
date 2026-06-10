@@ -100,7 +100,16 @@ const fieldLabels = {
   sales: "売上金額",
   cost: "原価",
   responseStatus: "対応状況",
-  memo: "改善メモ",
+  inquirySource: "問い合わせ元",
+  region: "地域",
+  carModel: "車種",
+  carCondition: "車の状態",
+  vehicleInspection: "車検の有無",
+  pickupTiming: "引き取り希望時期",
+  contactMethod: "連絡方法",
+  nextContactAt: "次回連絡日",
+  leadRank: "見込み度",
+  memo: "メモ",
   areaPreset: "対応エリア選択",
   serviceAreas: "対応エリア"
 };
@@ -116,9 +125,9 @@ const formConfigs = {
   inquiries: {
     eyebrow: "問い合わせを新規追加",
     title: "問い合わせフォーム",
-    fields: ["inquiryAt", "media", "inquiry", "body", "responseStatus", "title", "memo"],
-    required: ["inquiryAt", "media", "inquiry"],
-    defaults: { responseStatus: "未対応", title: "問い合わせから追加" }
+    fields: ["inquiryAt", "inquirySource", "region", "carModel", "carCondition", "vehicleInspection", "pickupTiming", "contactMethod", "responseStatus", "nextContactAt", "leadRank", "inquiry", "memo"],
+    required: ["inquiryAt"],
+    defaults: { inquirySource: "Instagram", responseStatus: "未対応", leadRank: "B", title: "廃車引き取り問い合わせ" }
   },
   works: {
     eyebrow: "作業予定を新規追加",
@@ -251,6 +260,10 @@ const appealPatterns = {
 };
 
 const mediaOptions = ["Instagram", "X", "LINE", "Facebook", "Googleビジネスプロフィール"];
+const inquirySourceOptions = ["Instagram", "X", "LINE", "電話", "紹介", "その他"];
+const responseStatusOptions = ["未対応", "連絡済み", "確認中", "見積中", "成約", "失注"];
+const vehicleInspectionOptions = ["未確認", "車検あり", "車検切れ", "不明"];
+const leadRankOptions = ["A", "B", "C"];
 const postStatusOptions = ["未投稿", "投稿済み", "反応あり", "問い合わせあり"];
 
 const views = {
@@ -284,6 +297,7 @@ const cancelEdit = document.querySelector("#cancelEdit");
 const saveEntry = document.querySelector("#saveEntry");
 const bulkCreatePosts = document.querySelector("#bulkCreatePosts");
 const copyStatus = document.querySelector("#copyStatus");
+const privacyNotice = document.querySelector("#privacyNotice");
 
 const weeklyPatternOrder = [
   "immobile",
@@ -325,6 +339,15 @@ function blankRecord() {
     sales: 0,
     cost: 0,
     responseStatus: "未対応",
+    inquirySource: "Instagram",
+    region: "",
+    carModel: "",
+    carCondition: "",
+    vehicleInspection: "未確認",
+    pickupTiming: "",
+    contactMethod: "",
+    nextContactAt: "",
+    leadRank: "B",
     reactionMemo: "",
     inquiryCount: 0,
     memo: "",
@@ -345,6 +368,14 @@ function normalizePostStatus(status) {
   return "未投稿";
 }
 
+function normalizeResponseStatus(status) {
+  if (responseStatusOptions.includes(status)) return status;
+  if (["返信済み", "連絡済"].includes(status)) return "連絡済み";
+  if (["対応中", "確認済み"].includes(status)) return "確認中";
+  if (["完了", "受注"].includes(status)) return "成約";
+  return "未対応";
+}
+
 function normalizeRecord(record) {
   const normalized = {
     ...blankRecord(),
@@ -354,6 +385,10 @@ function normalizeRecord(record) {
     inquiryCount: Number(record.inquiryCount) || 0
   };
   normalized.postStatus = normalizePostStatus(normalized.postStatus);
+  normalized.responseStatus = normalizeResponseStatus(normalized.responseStatus);
+  normalized.inquirySource = inquirySourceOptions.includes(normalized.inquirySource) ? normalized.inquirySource : (inquirySourceOptions.includes(normalized.media) ? normalized.media : "Instagram");
+  normalized.vehicleInspection = vehicleInspectionOptions.includes(normalized.vehicleInspection) ? normalized.vehicleInspection : "未確認";
+  normalized.leadRank = leadRankOptions.includes(normalized.leadRank) ? normalized.leadRank : "B";
   return normalized;
 }
 
@@ -519,9 +554,28 @@ function displayDate(dateString) {
   return dateFormat.format(new Date(`${dateString}T00:00:00`));
 }
 
+function displayDateOrBlank(dateString) {
+  return dateString ? displayDate(dateString) : "未入力";
+}
+
+function isActionableInquiry(record) {
+  return isInquiryRecord(record) && !["成約", "失注"].includes(record.responseStatus);
+}
+
+function isFollowUpDue(record) {
+  return isActionableInquiry(record) && Boolean(record.nextContactAt) && record.nextContactAt <= todayISO();
+}
+
+function matchesCurrentView(record) {
+  if (currentView === "inquiries") return isInquiryRecord(record);
+  if (currentView === "works") return isWorkRecord(record);
+  if (currentView === "sales") return isSalesRecord(record);
+  return record.recordType !== "inquiries" && record.recordType !== "works" && record.recordType !== "sales";
+}
+
 function filteredRecords() {
   const dateKey = views[currentView].dateKey;
-  return records.filter((record) => currentMonth === "all" || monthOf(record[dateKey]) === currentMonth);
+  return records.filter((record) => matchesCurrentView(record) && (currentMonth === "all" || monthOf(record[dateKey]) === currentMonth));
 }
 
 function setupMonthFilter() {
@@ -542,6 +596,7 @@ function updateSummary() {
   const sales = salesRecords.reduce((sum, record) => sum + record.sales, 0);
   const profitTotal = salesRecords.reduce((sum, record) => sum + profit(record), 0);
   const openInquiries = inquiryRecords.filter((record) => record.responseStatus === "未対応").length;
+  const dueInquiries = inquiryRecords.filter(isFollowUpDue).length;
   const works = workRecords.filter((record) => record.workDate >= today).length;
   const label = summaryMonth === "all" ? "すべての月" : `${summaryMonth.replace("-", "年")}月`;
 
@@ -550,13 +605,13 @@ function updateSummary() {
   monthlyLabel.textContent = `${label}の売上データ合計`;
   profitLabel.textContent = `${label}の売上 - 原価`;
   document.querySelector("#openInquiries").textContent = `${openInquiries}件`;
-  inquiryLabel.textContent = `${label}の未対応のみ`;
+  inquiryLabel.textContent = dueInquiries > 0 ? `${label} / 要連絡 ${dueInquiries}件` : `${label}の未対応のみ`;
   document.querySelector("#upcomingWorks").textContent = `${works}件`;
   workLabel.textContent = `${label} / 今日以降`;
 }
 
 function inputType(field) {
-  if (["postedAt", "inquiryAt", "workDate"].includes(field)) return "date";
+  if (["postedAt", "inquiryAt", "workDate", "nextContactAt"].includes(field)) return "date";
   if (["sales", "cost", "inquiryCount"].includes(field)) return "number";
   return "text";
 }
@@ -672,8 +727,8 @@ function createField(field, values, config) {
   if (field === "generatedCopies") return createGeneratedCopiesField(values);
 
   const label = document.createElement("label");
-  const isLongText = ["body", "memo", "reactionMemo", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field);
-  const isSelect = ["media", "appealPattern", "postStatus"].includes(field);
+  const isLongText = ["body", "memo", "reactionMemo", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "inquiry", "carCondition"].includes(field);
+  const isSelect = ["media", "inquirySource", "appealPattern", "postStatus", "responseStatus", "vehicleInspection", "leadRank"].includes(field);
   const input = isSelect ? document.createElement("select") : isLongText ? document.createElement("textarea") : document.createElement("input");
   label.textContent = fieldLabels[field];
   input.name = field;
@@ -683,12 +738,24 @@ function createField(field, values, config) {
   if (field === "media") {
     input.innerHTML = mediaOptions.map((media) => `<option value="${media}">${media}</option>`).join("");
     input.value = mediaOptions.includes(values[field]) ? values[field] : "Instagram";
+  } else if (field === "inquirySource") {
+    input.innerHTML = inquirySourceOptions.map((source) => `<option value="${source}">${source}</option>`).join("");
+    input.value = inquirySourceOptions.includes(values[field]) ? values[field] : "Instagram";
   } else if (field === "appealPattern") {
     input.innerHTML = Object.entries(appealPatterns).map(([value, pattern]) => `<option value="${value}">${pattern.label}</option>`).join("");
     input.value = appealPatterns[values[field]] ? values[field] : "shakenExpired";
   } else if (field === "postStatus") {
     input.innerHTML = postStatusOptions.map((status) => `<option value="${status}">${status}</option>`).join("");
     input.value = normalizePostStatus(values[field]);
+  } else if (field === "responseStatus") {
+    input.innerHTML = responseStatusOptions.map((status) => `<option value="${status}">${status}</option>`).join("");
+    input.value = normalizeResponseStatus(values[field]);
+  } else if (field === "vehicleInspection") {
+    input.innerHTML = vehicleInspectionOptions.map((status) => `<option value="${status}">${status}</option>`).join("");
+    input.value = vehicleInspectionOptions.includes(values[field]) ? values[field] : "未確認";
+  } else if (field === "leadRank") {
+    input.innerHTML = leadRankOptions.map((rank) => `<option value="${rank}">${rank}</option>`).join("");
+    input.value = leadRankOptions.includes(values[field]) ? values[field] : "B";
   } else if (isLongText) {
     input.rows = field === "body" ? 7 : field.startsWith("canva") ? 3 : 3;
     if (["canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field)) label.classList.add("copy-output");
@@ -700,7 +767,7 @@ function createField(field, values, config) {
     input.type = inputType(field);
   }
 
-  if (["body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "reactionMemo", "memo"].includes(field)) label.classList.add("full-span");
+  if (["body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "reactionMemo", "memo", "inquiry", "carCondition"].includes(field)) label.classList.add("full-span");
 
   if (["canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field)) {
     const title = document.createElement("span");
@@ -778,6 +845,7 @@ function renderForm(record = null) {
   saveEntry.textContent = editingId ? "更新する" : currentView === "posts" ? "投稿に追加" : "保存する";
   cancelEdit.hidden = !editingId;
   if (bulkCreatePosts) bulkCreatePosts.hidden = currentView !== "posts" || Boolean(editingId);
+  if (privacyNotice) privacyNotice.hidden = currentView !== "inquiries";
   formFields.innerHTML = "";
 
   config.fields.forEach((field) => {
@@ -811,8 +879,13 @@ function collectFormRecord() {
     if (next.areaPreset && areaPresets[next.areaPreset]) next.serviceAreas = uniqueAreas(areaPresets[next.areaPreset].areas).join("、");
   }
 
+  if (currentView === "inquiries") {
+    next.media = next.inquirySource || next.media;
+    next.title = next.carModel || next.region || formConfigs[currentView].defaults.title;
+  }
+
   next.id = editingId || createId();
-  next.recordType = next.recordType || currentView;
+  next.recordType = editingId ? next.recordType || currentView : currentView;
   return normalizeRecord(next);
 }
 
@@ -903,10 +976,17 @@ function metaFor(record) {
   }
   if (currentView === "inquiries") {
     return [
-      ["媒体", record.media],
+      ["問い合わせ元", record.inquirySource || record.media],
       ["問い合わせ日", displayDate(record.inquiryAt)],
+      ["地域", record.region],
+      ["車種", record.carModel],
+      ["車の状態", record.carCondition],
+      ["車検の有無", record.vehicleInspection],
+      ["引き取り希望時期", record.pickupTiming],
+      ["連絡方法", record.contactMethod],
       ["対応状況", record.responseStatus],
-      ["関連投稿", record.title]
+      ["次回連絡日", displayDateOrBlank(record.nextContactAt)],
+      ["見込み度", record.leadRank]
     ];
   }
   if (currentView === "works") {
@@ -926,7 +1006,11 @@ function metaFor(record) {
 }
 
 function textFor(record) {
-  if (currentView === "inquiries") return { title: record.inquiry, body: record.body || `関連投稿：${record.title}`, date: record.inquiryAt, pill: record.responseStatus };
+  if (currentView === "inquiries") {
+    const title = [record.region, record.carModel].filter(Boolean).join(" / ") || record.inquiry || "廃車引き取り問い合わせ";
+    const details = [record.inquiry, record.carCondition, record.pickupTiming ? `希望時期：${record.pickupTiming}` : ""].filter(Boolean).join(" / ");
+    return { title, body: details || "問い合わせ内容はメモ欄で任意管理", date: record.inquiryAt, pill: record.responseStatus };
+  }
   if (currentView === "works") return { title: record.workDetail, body: `関連投稿：${record.title}`, date: record.workDate, pill: record.media };
   if (currentView === "sales") return { title: record.title, body: `利益 ${yen.format(profit(record))} / 原価 ${yen.format(record.cost)}`, date: record.postedAt, pill: record.media };
   return { title: record.title, body: record.body, date: record.postedAt, pill: record.postStatus };
@@ -1013,12 +1097,18 @@ function renderList() {
   data.forEach((record) => {
     const viewText = textFor(record);
     const node = template.content.cloneNode(true);
-    node.querySelector(".item-card").dataset.id = record.id;
+    const cardElement = node.querySelector(".item-card");
+    cardElement.dataset.id = record.id;
+    if (currentView === "inquiries") {
+      cardElement.classList.add("inquiry-card");
+      if (record.responseStatus === "未対応") cardElement.classList.add("is-unhandled");
+      if (isFollowUpDue(record)) cardElement.classList.add("is-followup-due");
+    }
     node.querySelector(".pill").textContent = viewText.pill;
     node.querySelector(".date").textContent = displayDate(viewText.date);
     node.querySelector("h3").textContent = viewText.title;
     node.querySelector(".description").textContent = viewText.body;
-    node.querySelector(".memo").textContent = `改善メモ：${record.memo || "未入力"}`;
+    node.querySelector(".memo").textContent = `${currentView === "inquiries" ? "メモ" : "改善メモ"}：${record.memo || "未入力"}`;
 
     const metaGrid = node.querySelector(".meta-grid");
     metaFor(record).forEach(([label, value]) => {
@@ -1040,13 +1130,30 @@ function renderList() {
       markPostedButton.hidden = true;
     }
 
+    if (currentView === "inquiries") {
+      const actions = node.querySelector(".item-actions");
+      [
+        ["連絡済み", "連絡済みにする"],
+        ["成約", "成約にする"],
+        ["失注", "失注にする"]
+      ].forEach(([status, label]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = status === "失注" ? "danger-button inquiry-status-button" : "secondary-button inquiry-status-button";
+        button.dataset.status = status;
+        button.textContent = label;
+        button.hidden = record.responseStatus === status;
+        actions.insertBefore(button, actions.querySelector(".edit-button"));
+      });
+    }
+
     list.appendChild(node);
   });
 }
 
 function exportCsv() {
-  const header = ["投稿予定日", "投稿先", "訴求パターン", "対応エリア", "投稿タイトル", "投稿本文", "Instagram/X/LINE用作成文", "Canva見出し", "Canvaサブコピー", "Canva注意書き", "Canva画像リンク", "投稿ステータス", "反応メモ", "問い合わせ件数", "問い合わせ日", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "対応状況", "改善メモ"];
-  const rows = records.map((record) => [record.postedAt, record.media, selectedAppealPattern(record.appealPattern).label, record.serviceAreas, record.title, record.body, record.generatedCopies, record.canvaHeadline, record.canvaSubcopy, record.canvaNote, record.canvaUrl, record.postStatus, record.reactionMemo, record.inquiryCount, record.inquiryAt, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.responseStatus, record.memo]);
+  const header = ["投稿予定日", "投稿先", "訴求パターン", "対応エリア", "投稿タイトル", "投稿本文", "Instagram/X/LINE用作成文", "Canva見出し", "Canvaサブコピー", "Canva注意書き", "Canva画像リンク", "投稿ステータス", "反応メモ", "問い合わせ件数", "問い合わせ日", "問い合わせ元", "地域", "車種", "車の状態", "車検の有無", "引き取り希望時期", "連絡方法", "対応状況", "次回連絡日", "見込み度", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "メモ"];
+  const rows = records.map((record) => [record.postedAt, record.media, selectedAppealPattern(record.appealPattern).label, record.serviceAreas, record.title, record.body, record.generatedCopies, record.canvaHeadline, record.canvaSubcopy, record.canvaNote, record.canvaUrl, record.postStatus, record.reactionMemo, record.inquiryCount, record.inquiryAt, record.inquirySource, record.region, record.carModel, record.carCondition, record.vehicleInspection, record.pickupTiming, record.contactMethod, record.responseStatus, record.nextContactAt, record.leadRank, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.memo]);
   const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
   const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -1106,6 +1213,15 @@ list.addEventListener("click", (event) => {
     saveRecords();
     refreshScreen();
     showCopyStatus("投稿ステータスを投稿済みにしました");
+    return;
+  }
+
+  if (event.target.classList.contains("inquiry-status-button")) {
+    const nextStatus = normalizeResponseStatus(event.target.dataset.status);
+    records = records.map((item) => (item.id === record.id ? normalizeRecord({ ...item, responseStatus: nextStatus }) : item));
+    saveRecords();
+    refreshScreen();
+    showCopyStatus(`問い合わせを${nextStatus}にしました`);
     return;
   }
 

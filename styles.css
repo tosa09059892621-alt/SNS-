@@ -591,3 +591,56 @@ textarea[name="canvaNote"] {
   .schedule-heading { align-items: stretch; flex-direction: column; }
   .schedule-note { white-space: normal; }
 }
+
+.privacy-notice {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  margin: 0.8rem 0 0;
+}
+
+.inquiry-card {
+  position: relative;
+}
+
+.inquiry-card.is-unhandled {
+  border-color: #ffb199;
+  box-shadow: 0 16px 36px rgba(255, 122, 89, 0.16);
+}
+
+.inquiry-card.is-unhandled .pill {
+  background: #fff0ea;
+  color: #b84a26;
+}
+
+.inquiry-card.is-followup-due {
+  background: linear-gradient(180deg, #fffdf8 0%, #ffffff 46%);
+  border-color: #f0b86a;
+}
+
+.inquiry-card.is-followup-due::before {
+  background: var(--warning);
+  border-radius: 999px;
+  color: white;
+  content: "要連絡";
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0.25rem 0.55rem;
+  position: absolute;
+  right: 0.9rem;
+  top: -0.7rem;
+}
+
+.inquiry-status-button {
+  box-shadow: none;
+}
+
+@media (max-width: 820px) {
+  .item-actions {
+    flex-wrap: wrap;
+  }
+
+  .item-actions button {
+    flex: 1 1 auto;
+  }
+}
