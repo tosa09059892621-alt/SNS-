@@ -85,16 +85,18 @@ const fieldLabels = {
   sales: "売上金額",
   cost: "原価",
   responseStatus: "対応状況",
-  memo: "改善メモ"
+  memo: "改善メモ",
+  areaPreset: "対応エリア選択",
+  serviceAreas: "対応エリア"
 };
 
 const formConfigs = {
   posts: {
     eyebrow: "投稿を新規追加",
     title: "投稿フォーム",
-    fields: ["postedAt", "media", "title", "body", "canvaUrl", "postStatus", "memo"],
+    fields: ["postedAt", "media", "serviceAreas", "title", "body", "canvaUrl", "postStatus", "memo"],
     required: ["postedAt", "media", "title"],
-    defaults: { postStatus: "下書き" }
+    defaults: { postStatus: "下書き", areaPreset: "sapporoOtaru" }
   },
   inquiries: {
     eyebrow: "問い合わせを新規追加",
@@ -118,6 +120,19 @@ const formConfigs = {
     defaults: { title: "売上記録" }
   }
 };
+
+const serviceAreaOptions = [
+  "札幌", "小樽", "石狩", "江別", "北広島", "恵庭", "千歳", "当別", "銭函", "朝里", "余市", "仁木", "赤井川", "手稲", "西区", "北区", "東区", "白石区", "豊平区", "清田区", "南区", "中央区", "厚別区", "道央エリア", "札幌近郊", "小樽近郊", "後志エリア"
+];
+
+const areaPresets = {
+  sapporoOtaru: {
+    label: "札幌・小樽近郊セット",
+    areas: serviceAreaOptions
+  }
+};
+
+const mediaOptions = ["Instagram", "X", "LINE配信", "Facebook", "Googleビジネスプロフィール"];
 
 const views = {
   posts: { eyebrow: "投稿管理", title: "投稿一覧", dateKey: "postedAt" },
@@ -179,12 +194,60 @@ function blankRecord() {
     cost: 0,
     responseStatus: "未対応",
     memo: "",
+    areaPreset: "",
+    serviceAreas: "",
     recordType: ""
   };
 }
 
 function normalizeRecord(record) {
   return { ...blankRecord(), ...record, sales: Number(record.sales) || 0, cost: Number(record.cost) || 0 };
+}
+
+function parseAreas(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value !== "string") return [];
+  return value.split(/[、,\n]/).map((area) => area.trim()).filter(Boolean);
+}
+
+function uniqueAreas(areas) {
+  return [...new Set(areas)].filter((area) => serviceAreaOptions.includes(area));
+}
+
+function areaSummary(areas) {
+  if (areas.length === 0) return "札幌・小樽近郊";
+  if (areas.includes("札幌近郊") && areas.includes("小樽近郊")) return "札幌・小樽近郊";
+  if (areas.includes("道央エリア") && areas.includes("後志エリア")) return "道央・後志エリア";
+  return areas.slice(0, 3).join("・");
+}
+
+function bodyAreas(areas) {
+  const priority = ["小樽", "石狩", "江別", "北広島", "恵庭", "千歳", "余市", "道央エリア", "後志エリア"];
+  return priority.filter((area) => areas.includes(area)).slice(0, 6).join("、");
+}
+
+function areaHashtags(areas) {
+  return areas.map((area) => `#${area.replace(/\s+/g, "")}`).join(" ");
+}
+
+function createPostCopy(media, areas) {
+  const selectedAreas = uniqueAreas(areas);
+  const summary = areaSummary(selectedAreas);
+  const nearbyAreas = bodyAreas(selectedAreas);
+  const hashtags = ["#廃車引き取り", "#廃車買取", "#事故車相談", "#不動車相談", ...areaHashtags(selectedAreas).split(" ").filter(Boolean)].join(" ");
+  const lineBreak = media === "X" ? "\n" : "\n\n";
+  const commonLead = `${summary}で廃車引き取りのご相談を受け付けています。`;
+  const nearbyText = nearbyAreas ? `対応エリアは${nearbyAreas}など。` : "対応エリアは札幌近郊・小樽近郊など。";
+
+  if (media === "X") {
+    return `${commonLead}\n動かない車・車検切れ・乗り換え前の処分など、まずは状態をお知らせください。${nearbyText}\n${hashtags}`;
+  }
+
+  if (media === "LINE配信") {
+    return `${commonLead}${lineBreak}動かない車、車検切れ、乗らなくなった車の処分など、状況に合わせてご案内します。${nearbyText}${lineBreak}気になる方はLINEからお気軽にご相談ください。${lineBreak}${hashtags}`;
+  }
+
+  return `${commonLead}${lineBreak}動かない車・車検切れ・乗り換え前の処分など、まずはお車の状態をお知らせください。${nearbyText}${lineBreak}投稿では地名を入れすぎず、詳しい対応可否は個別にご案内します。${lineBreak}${hashtags}`;
 }
 
 function loadRecords() {
@@ -271,6 +334,97 @@ function inputType(field) {
   return "text";
 }
 
+function createAreaPicker(values) {
+  const wrapper = document.createElement("fieldset");
+  wrapper.className = "area-picker full-span";
+
+  const legend = document.createElement("legend");
+  legend.textContent = fieldLabels.areaPreset;
+
+  const presetLabel = document.createElement("label");
+  presetLabel.className = "area-preset-label";
+  presetLabel.textContent = "セット選択";
+
+  const presetSelect = document.createElement("select");
+  presetSelect.name = "areaPreset";
+  presetSelect.innerHTML = '<option value="">個別に選択</option>' + Object.entries(areaPresets).map(([value, preset]) => `<option value="${value}">${preset.label}</option>`).join("");
+  presetSelect.value = values.areaPreset || "";
+  presetLabel.appendChild(presetSelect);
+
+  const selectedAreas = values.areaPreset && areaPresets[values.areaPreset]
+    ? uniqueAreas(areaPresets[values.areaPreset].areas)
+    : uniqueAreas(parseAreas(values.serviceAreas));
+  const checkboxGrid = document.createElement("div");
+  checkboxGrid.className = "area-checkbox-grid";
+
+  serviceAreaOptions.forEach((area) => {
+    const optionLabel = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "serviceAreaOptions";
+    checkbox.value = area;
+    checkbox.checked = selectedAreas.includes(area);
+    optionLabel.append(checkbox, document.createTextNode(area));
+    checkboxGrid.appendChild(optionLabel);
+  });
+
+  const hint = document.createElement("p");
+  hint.className = "field-hint";
+  hint.textContent = "投稿本文には自然な量だけ、ハッシュタグには多めに地域名を入れます。";
+
+  wrapper.append(legend, presetLabel, checkboxGrid, hint);
+  return wrapper;
+}
+
+function createField(field, values, config) {
+  if (field === "serviceAreas") return createAreaPicker(values);
+
+  const label = document.createElement("label");
+  const isLongText = field === "body" || field === "memo";
+  const input = field === "media" ? document.createElement("select") : isLongText ? document.createElement("textarea") : document.createElement("input");
+  label.textContent = fieldLabels[field];
+  input.name = field;
+  input.value = values[field] ?? "";
+  input.required = config.required.includes(field);
+
+  if (field === "media") {
+    input.innerHTML = mediaOptions.map((media) => `<option value="${media}">${media}</option>`).join("");
+    input.value = mediaOptions.includes(values[field]) ? values[field] : "Instagram";
+  } else if (isLongText) {
+    input.rows = field === "body" ? 6 : 3;
+  } else if (inputType(field) === "number") {
+    input.type = "number";
+    input.min = "0";
+    input.step = "1";
+  } else {
+    input.type = inputType(field);
+  }
+
+  label.appendChild(input);
+  return label;
+}
+
+function syncPostCopy({ force = false } = {}) {
+  if (currentView !== "posts") return;
+  const mediaInput = entryForm.elements.media;
+  const titleInput = entryForm.elements.title;
+  const bodyInput = entryForm.elements.body;
+  if (!mediaInput || !titleInput || !bodyInput) return;
+
+  const selectedAreas = uniqueAreas([...entryForm.querySelectorAll('input[name="serviceAreaOptions"]:checked')].map((checkbox) => checkbox.value));
+  const generatedTitle = `${areaSummary(selectedAreas)}で廃車引き取りのご相談受付中`;
+  const generatedBody = createPostCopy(mediaInput.value, selectedAreas);
+
+  if (force || !titleInput.value.trim() || titleInput.dataset.autoGenerated === "true") {
+    titleInput.value = generatedTitle;
+    titleInput.dataset.autoGenerated = "true";
+  }
+  if (force || !bodyInput.value.trim() || bodyInput.dataset.autoGenerated === "true") {
+    bodyInput.value = generatedBody;
+    bodyInput.dataset.autoGenerated = "true";
+  }
+}
+
 function renderForm(record = null) {
   const config = formConfigs[currentView];
   const values = { ...blankRecord(), ...config.defaults, ...record };
@@ -281,23 +435,14 @@ function renderForm(record = null) {
   formFields.innerHTML = "";
 
   config.fields.forEach((field) => {
-    const label = document.createElement("label");
-    const input = field === "body" || field === "memo" ? document.createElement("textarea") : document.createElement("input");
-    label.textContent = fieldLabels[field];
-    input.name = field;
-    input.value = values[field] ?? "";
-    input.required = config.required.includes(field);
-    if (input.tagName === "TEXTAREA") input.rows = 3;
-    if (inputType(field) === "number") {
-      input.type = "number";
-      input.min = "0";
-      input.step = "1";
-    } else if (input.tagName !== "TEXTAREA") {
-      input.type = inputType(field);
-    }
-    label.appendChild(input);
-    formFields.appendChild(label);
+    formFields.appendChild(createField(field, values, config));
   });
+
+  const titleInput = entryForm.elements.title;
+  const bodyInput = entryForm.elements.body;
+  if (titleInput) titleInput.dataset.autoGenerated = record?.title ? "false" : "true";
+  if (bodyInput) bodyInput.dataset.autoGenerated = record?.body ? "false" : "true";
+  if (currentView === "posts" && !record) syncPostCopy({ force: true });
 }
 
 function collectFormRecord() {
@@ -306,7 +451,14 @@ function collectFormRecord() {
   const next = { ...blankRecord(), ...formConfigs[currentView].defaults, ...existing };
 
   for (const [key, value] of formData.entries()) {
+    if (["serviceAreaOptions", "serviceAreas"].includes(key)) continue;
     next[key] = ["sales", "cost"].includes(key) ? Number(value) || 0 : value.trim();
+  }
+
+  if (currentView === "posts") {
+    const selectedAreas = uniqueAreas(formData.getAll("serviceAreaOptions"));
+    next.serviceAreas = selectedAreas.join("、");
+    if (next.areaPreset && areaPresets[next.areaPreset]) next.serviceAreas = uniqueAreas(areaPresets[next.areaPreset].areas).join("、");
   }
 
   next.id = editingId || createId();
@@ -331,6 +483,7 @@ function metaFor(record) {
       ["媒体", record.media],
       ["投稿ステータス", record.postStatus],
       ["Canva画像リンク", record.canvaUrl],
+      ["対応エリア", record.serviceAreas || "未選択"],
       ["対応状況", record.responseStatus]
     ];
   }
@@ -405,8 +558,8 @@ function renderList() {
 }
 
 function exportCsv() {
-  const header = ["投稿日", "媒体", "投稿タイトル", "投稿本文", "Canva画像リンク", "投稿ステータス", "問い合わせ日", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "対応状況", "改善メモ"];
-  const rows = records.map((record) => [record.postedAt, record.media, record.title, record.body, record.canvaUrl, record.postStatus, record.inquiryAt, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.responseStatus, record.memo]);
+  const header = ["投稿日", "媒体", "対応エリア", "投稿タイトル", "投稿本文", "Canva画像リンク", "投稿ステータス", "問い合わせ日", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "対応状況", "改善メモ"];
+  const rows = records.map((record) => [record.postedAt, record.media, record.serviceAreas, record.title, record.body, record.canvaUrl, record.postStatus, record.inquiryAt, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.responseStatus, record.memo]);
   const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
   const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -416,6 +569,26 @@ function exportCsv() {
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+entryForm.addEventListener("input", (event) => {
+  if (["title", "body"].includes(event.target.name)) event.target.dataset.autoGenerated = "false";
+});
+
+entryForm.addEventListener("change", (event) => {
+  if (event.target.name === "areaPreset") {
+    const preset = areaPresets[event.target.value];
+    entryForm.querySelectorAll('input[name="serviceAreaOptions"]').forEach((checkbox) => {
+      checkbox.checked = Boolean(preset?.areas.includes(checkbox.value));
+    });
+    syncPostCopy({ force: true });
+  }
+
+  if (["serviceAreaOptions", "media"].includes(event.target.name)) {
+    const presetSelect = entryForm.elements.areaPreset;
+    if (event.target.name === "serviceAreaOptions" && presetSelect) presetSelect.value = "";
+    syncPostCopy();
+  }
+});
 
 entryForm.addEventListener("submit", (event) => {
   event.preventDefault();

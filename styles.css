@@ -200,6 +200,7 @@ input, select, textarea {
 }
 
 .form-grid input,
+.form-grid select,
 .form-grid textarea {
   background: white;
   color: var(--text);
@@ -209,6 +210,59 @@ input, select, textarea {
 .form-grid textarea {
   line-height: 1.6;
   resize: vertical;
+}
+
+.full-span { grid-column: 1 / -1; }
+
+.area-picker {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+  padding: 0.85rem;
+}
+
+.area-picker legend {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 0 0.35rem;
+}
+
+.area-preset-label {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.area-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.area-checkbox-grid label {
+  align-items: center;
+  background: #f8f9fc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  display: flex;
+  font-size: 0.82rem;
+  gap: 0.35rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.area-checkbox-grid input {
+  flex: 0 0 auto;
+  margin: 0;
+  width: auto;
+}
+
+.field-hint {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 0;
 }
 
 .form-actions {
@@ -335,6 +389,7 @@ input, select, textarea {
   .toolbar label { min-width: 0; }
   .card-list { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
+  .area-checkbox-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 520px) {
@@ -346,4 +401,5 @@ input, select, textarea {
   .form-actions, .item-actions { flex-direction: column; }
   .section-heading, .form-heading { align-items: stretch; flex-direction: column; }
   .meta-grid { grid-template-columns: 1fr; }
+  .area-checkbox-grid { grid-template-columns: 1fr; }
 }
