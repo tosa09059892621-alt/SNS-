@@ -129,6 +129,16 @@ input, select, textarea {
   color: var(--text);
 }
 
+textarea[name="generatedCopies"],
+textarea[name^="canva"] {
+  background: #fffdf7;
+  border-color: #f2d28a;
+}
+
+.copy-output textarea {
+  font-size: 0.92rem;
+}
+
 .tabs {
   display: flex;
   gap: 0.5rem;
@@ -265,6 +275,35 @@ input, select, textarea {
   margin: 0.75rem 0 0;
 }
 
+.copy-output {
+  position: relative;
+}
+
+.copy-output::after {
+  background: #fff6df;
+  border: 1px solid #f2d28a;
+  border-radius: 999px;
+  color: #8a5b00;
+  content: "自動作成";
+  font-size: 0.7rem;
+  font-weight: 900;
+  justify-self: start;
+  padding: 0.16rem 0.5rem;
+}
+
+textarea[name="generatedCopies"] {
+  min-height: 22rem;
+}
+
+textarea[name="canvaHeadline"] {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+textarea[name="canvaNote"] {
+  color: #6b5a32;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -389,6 +428,10 @@ input, select, textarea {
   .toolbar label { min-width: 0; }
   .card-list { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
+  .area-checkbox-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
   .area-checkbox-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
