@@ -397,6 +397,7 @@ textarea[name="canvaNote"] {
 
 .item-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.85rem;
@@ -642,5 +643,80 @@ textarea[name="canvaNote"] {
 
   .item-actions button {
     flex: 1 1 auto;
+  }
+}
+
+.inquiry-alert-panel {
+  align-items: center;
+  background: linear-gradient(135deg, #fff8f3 0%, #f6f8ff 100%);
+  border: 1px solid #ffd4b8;
+  border-radius: 1.2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+}
+
+.inquiry-alert-panel h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.inquiry-alert-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.alert-chip {
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 0.45rem 0.75rem;
+  white-space: nowrap;
+}
+
+.alert-chip.unhandled {
+  background: #fff0ea;
+  color: #b84a26;
+}
+
+.alert-chip.due {
+  background: #fff6df;
+  color: #8a5b00;
+}
+
+.alert-chip.active {
+  background: #eef2ff;
+  color: var(--primary);
+}
+
+.inquiry-card[data-rank="A"]::after {
+  background: var(--success);
+  border-radius: 999px;
+  color: white;
+  content: "見込みA";
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0.25rem 0.55rem;
+  position: absolute;
+  right: 0.9rem;
+  top: 0.9rem;
+}
+
+.inquiry-card.is-followup-due[data-rank="A"]::after {
+  top: 1.95rem;
+}
+
+@media (max-width: 820px) {
+  .inquiry-alert-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inquiry-alert-stats {
+    justify-content: flex-start;
   }
 }
