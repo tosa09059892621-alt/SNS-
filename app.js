@@ -288,6 +288,7 @@ const inquiryLabel = document.querySelector("#inquiryLabel");
 const workLabel = document.querySelector("#workLabel");
 const list = document.querySelector("#list");
 const postScheduleList = document.querySelector("#postScheduleList");
+const inquiryAlertPanel = document.querySelector("#inquiryAlertPanel");
 const template = document.querySelector("#itemTemplate");
 const entryForm = document.querySelector("#entryForm");
 const formFields = document.querySelector("#formFields");
@@ -551,6 +552,7 @@ function isWorkRecord(record) {
 }
 
 function displayDate(dateString) {
+  if (!dateString) return "未入力";
   return dateFormat.format(new Date(`${dateString}T00:00:00`));
 }
 
@@ -564,6 +566,14 @@ function isActionableInquiry(record) {
 
 function isFollowUpDue(record) {
   return isActionableInquiry(record) && Boolean(record.nextContactAt) && record.nextContactAt <= todayISO();
+}
+
+function inquiryPriority(record) {
+  if (!isInquiryRecord(record)) return 3;
+  if (record.responseStatus === "未対応") return 0;
+  if (isFollowUpDue(record)) return 1;
+  if (["連絡済み", "確認中", "見積中"].includes(record.responseStatus)) return 2;
+  return 3;
 }
 
 function matchesCurrentView(record) {
@@ -1031,6 +1041,28 @@ function renderPostScheduleHeading(data) {
   if (note) note.textContent = `${label} / ${data.length}件を投稿予定日順に表示`;
 }
 
+function renderInquiryAlertPanel(data) {
+  if (!inquiryAlertPanel) return;
+  inquiryAlertPanel.hidden = currentView !== "inquiries";
+  if (currentView !== "inquiries") return;
+
+  const label = currentMonth === "all" ? "すべての月" : `${currentMonth.replace("-", "年")}月`;
+  const openCount = data.filter((record) => record.responseStatus === "未対応").length;
+  const dueCount = data.filter(isFollowUpDue).length;
+  const activeCount = data.filter(isActionableInquiry).length;
+  inquiryAlertPanel.innerHTML = `
+    <div>
+      <p class="eyebrow">問い合わせ優先対応</p>
+      <h3>${label}の取りこぼしチェック</h3>
+    </div>
+    <div class="inquiry-alert-stats">
+      <span class="alert-chip unhandled">未対応 ${openCount}件</span>
+      <span class="alert-chip due">今日以前の次回連絡 ${dueCount}件</span>
+      <span class="alert-chip active">進行中 ${activeCount}件</span>
+    </div>
+  `;
+}
+
 function createStatusButton(status, label, activeStatus) {
   const button = document.createElement("button");
   button.type = "button";
@@ -1080,6 +1112,10 @@ function createPostManagementControls(record) {
 function renderList() {
   const config = views[currentView];
   const data = filteredRecords().sort((a, b) => {
+    if (currentView === "inquiries") {
+      const priority = inquiryPriority(a) - inquiryPriority(b);
+      if (priority) return priority;
+    }
     const result = a[config.dateKey].localeCompare(b[config.dateKey]);
     return result || a.title.localeCompare(b.title);
   });
@@ -1087,6 +1123,7 @@ function renderList() {
   document.querySelector("#viewTitle").textContent = config.title;
   document.querySelector("#viewCount").textContent = `${data.length}件`;
   renderPostScheduleHeading(data);
+  renderInquiryAlertPanel(data);
   list.innerHTML = "";
 
   if (data.length === 0) {
@@ -1103,6 +1140,7 @@ function renderList() {
       cardElement.classList.add("inquiry-card");
       if (record.responseStatus === "未対応") cardElement.classList.add("is-unhandled");
       if (isFollowUpDue(record)) cardElement.classList.add("is-followup-due");
+      if (record.leadRank) cardElement.dataset.rank = record.leadRank;
     }
     node.querySelector(".pill").textContent = viewText.pill;
     node.querySelector(".date").textContent = displayDate(viewText.date);
@@ -1134,12 +1172,14 @@ function renderList() {
       const actions = node.querySelector(".item-actions");
       [
         ["連絡済み", "連絡済みにする"],
+        ["確認中", "確認中にする"],
+        ["見積中", "見積中にする"],
         ["成約", "成約にする"],
         ["失注", "失注にする"]
       ].forEach(([status, label]) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = status === "失注" ? "danger-button inquiry-status-button" : "secondary-button inquiry-status-button";
+        button.className = ["成約", "失注"].includes(status) ? (status === "失注" ? "danger-button inquiry-status-button" : "primary-button inquiry-status-button") : "secondary-button inquiry-status-button";
         button.dataset.status = status;
         button.textContent = label;
         button.hidden = record.responseStatus === status;
