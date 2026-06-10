@@ -1,5 +1,6 @@
 const STORAGE_KEY = "snsSidejobDashboardRecords";
 const INQUIRY_STORAGE_KEY = "snsSidejobDashboardInquiries";
+const LEGACY_INQUIRY_STORAGE_KEYS = ["snsDashboardInquiries"];
 
 const defaultRecords = [
   {
@@ -275,6 +276,7 @@ const views = {
 };
 
 let records = loadRecords();
+let inquiries = records.filter(isInquiryRecord);
 let currentView = "posts";
 let currentMonth = "all";
 let editingId = null;
@@ -512,6 +514,13 @@ function readStoredArray(key) {
   return Array.isArray(saved) ? saved : [];
 }
 
+function readStoredInquiries() {
+  const currentInquiries = readStoredArray(INQUIRY_STORAGE_KEY);
+  if (currentInquiries.length > 0) return currentInquiries;
+
+  return LEGACY_INQUIRY_STORAGE_KEYS.flatMap((key) => readStoredArray(key));
+}
+
 function hasLegacyInquiryOnlyFields(record) {
   if (record.recordType) return false;
   if (!record.inquiry || !String(record.inquiry).trim()) return false;
@@ -525,7 +534,7 @@ function hasLegacyInquiryOnlyFields(record) {
 function loadRecords() {
   try {
     const storedRecords = readStoredArray(STORAGE_KEY);
-    const storedInquiries = readStoredArray(INQUIRY_STORAGE_KEY);
+    const storedInquiries = readStoredInquiries();
     const mainRecords = storedRecords
       .filter((record) => record.recordType !== "inquiries" && !hasLegacyInquiryOnlyFields(record))
       .map(normalizeRecord);
@@ -543,11 +552,15 @@ function loadRecords() {
   return defaultRecords.map(normalizeRecord);
 }
 
+function syncInquiryRecords() {
+  inquiries = records.filter(isInquiryRecord).map((record) => normalizeRecord({ ...record, recordType: "inquiries" }));
+}
+
 function saveRecords() {
-  const inquiryRecords = records.filter(isInquiryRecord).map((record) => normalizeRecord({ ...record, recordType: "inquiries" }));
+  syncInquiryRecords();
   const mainRecords = records.filter((record) => !isInquiryRecord(record)).map(normalizeRecord);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(mainRecords));
-  localStorage.setItem(INQUIRY_STORAGE_KEY, JSON.stringify(inquiryRecords));
+  localStorage.setItem(INQUIRY_STORAGE_KEY, JSON.stringify(inquiries));
 }
 
 function showCopyStatus(message = "コピーしました") {
@@ -1002,7 +1015,11 @@ function createWeeklyPosts() {
   editingId = null;
   currentView = "posts";
   currentMonth = monthOf(baseDate) || "all";
-  document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === "posts"));
+  document.querySelectorAll(".tab").forEach((tab) => {
+    const isActive = tab.dataset.view === "posts";
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+  });
   renderForm();
   refreshScreen();
   showCopyStatus("7日分の投稿を追加しました");
@@ -1014,9 +1031,28 @@ function resetForm() {
 }
 
 function refreshScreen() {
+  syncInquiryRecords();
   setupMonthFilter();
   updateSummary();
   renderList();
+}
+
+function renderInquiries() {
+  syncInquiryRecords();
+  updateSummary();
+  renderList();
+}
+
+function setActiveView(view) {
+  if (!views[view]) return;
+  currentView = view;
+  document.querySelectorAll(".tab").forEach((tab) => {
+    const isActive = tab.dataset.view === view;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+  });
+  resetForm();
+  refreshScreen();
 }
 
 function metaFor(record) {
@@ -1223,6 +1259,7 @@ function renderList() {
     if (currentView === "inquiries") {
       const actions = node.querySelector(".item-actions");
       [
+        ["未対応", "未対応に戻す"],
         ["連絡済み", "連絡済みにする"],
         ["確認中", "確認中にする"],
         ["見積中", "見積中にする"],
@@ -1291,7 +1328,8 @@ entryForm.addEventListener("submit", (event) => {
 
   saveRecords();
   resetForm();
-  refreshScreen();
+  if (currentView === "inquiries") renderInquiries();
+  else refreshScreen();
 });
 
 cancelEdit.addEventListener("click", resetForm);
@@ -1315,7 +1353,7 @@ list.addEventListener("click", (event) => {
     const nextStatus = normalizeResponseStatus(event.target.dataset.status);
     records = records.map((item) => (item.id === record.id ? normalizeRecord({ ...item, responseStatus: nextStatus }) : item));
     saveRecords();
-    refreshScreen();
+    renderInquiries();
     showCopyStatus(`問い合わせを${nextStatus}にしました`);
     return;
   }
@@ -1341,7 +1379,8 @@ list.addEventListener("click", (event) => {
     records = records.filter((item) => item.id !== record.id);
     saveRecords();
     if (editingId === record.id) resetForm();
-    refreshScreen();
+    if (currentView === "inquiries") renderInquiries();
+    else refreshScreen();
   }
 });
 
@@ -1364,14 +1403,7 @@ list.addEventListener("change", (event) => {
 });
 
 document.querySelectorAll(".tab").forEach((button) => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((tab) => tab.classList.remove("active"));
-    button.classList.add("active");
-    currentView = button.dataset.view;
-    resetForm();
-    updateSummary();
-    renderList();
-  });
+  button.addEventListener("click", () => setActiveView(button.dataset.view));
 });
 
 monthFilter.addEventListener("change", (event) => {

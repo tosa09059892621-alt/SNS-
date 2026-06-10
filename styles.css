@@ -150,6 +150,10 @@ textarea[name^="canva"] {
   font-size: 0.92rem;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .tabs {
   display: flex;
   gap: 0.5rem;
@@ -168,7 +172,8 @@ textarea[name^="canva"] {
   white-space: nowrap;
 }
 
-.tab.active {
+.tab.active,
+.tab[aria-selected="true"] {
   background: var(--text);
   border-color: var(--text);
   color: white;
