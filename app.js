@@ -77,6 +77,11 @@ const fieldLabels = {
   title: "投稿タイトル",
   body: "投稿本文",
   canvaUrl: "Canva画像リンク",
+  appealPattern: "訴求パターン",
+  generatedCopies: "Instagram / X / LINE用自動作成文",
+  canvaHeadline: "Canva画像用：見出し",
+  canvaSubcopy: "Canva画像用：サブコピー",
+  canvaNote: "Canva画像用：注意書き",
   postStatus: "投稿ステータス",
   inquiryAt: "問い合わせ日",
   inquiry: "問い合わせ内容",
@@ -94,8 +99,8 @@ const formConfigs = {
   posts: {
     eyebrow: "投稿を新規追加",
     title: "投稿フォーム",
-    fields: ["postedAt", "media", "serviceAreas", "title", "body", "canvaUrl", "postStatus", "memo"],
-    required: ["postedAt", "media", "title"],
+    fields: ["postedAt", "appealPattern", "media", "serviceAreas", "title", "body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "canvaUrl", "postStatus", "memo"],
+    required: ["postedAt", "appealPattern", "media", "title"],
     defaults: { postStatus: "下書き", areaPreset: "sapporoOtaru" }
   },
   inquiries: {
@@ -129,6 +134,109 @@ const areaPresets = {
   sapporoOtaru: {
     label: "札幌・小樽近郊セット",
     areas: serviceAreaOptions
+  }
+};
+
+const appealPatterns = {
+  shakenExpired: {
+    label: "車検切れ向け",
+    title: "車検切れの車も相談受付中",
+    subject: "車検切れの車",
+    body: "車検が切れて動かせない車も、保管場所や書類状況を確認してご案内します。",
+    prompt: "公道を走らせられず困っている方は、まずは車両状態と保管場所をお知らせください。",
+    canvaHeadline: "車検切れの車\n引き取り相談受付中",
+    canvaSubcopy: "動かせない車も状態を確認してご案内します",
+    hashtags: ["#車検切れ", "#車検切れ車"]
+  },
+  snowBuried: {
+    label: "雪に埋まった放置車向け",
+    title: "雪に埋まった放置車の相談受付中",
+    subject: "雪に埋まった放置車",
+    body: "雪に埋もれて動かしにくい放置車も、現地状況を確認しながら対応可能か確認いたします。",
+    prompt: "除雪状況や駐車場所によりご案内内容が変わるため、写真があるとスムーズです。",
+    canvaHeadline: "雪に埋まった放置車\nご相談ください",
+    canvaSubcopy: "場所・積雪状況を確認して対応内容をご案内します",
+    hashtags: ["#放置車", "#雪に埋まった車"]
+  },
+  inheritance: {
+    label: "相続・名義変更で困っている方向け",
+    title: "相続・名義変更で困る車の相談受付中",
+    subject: "相続や名義変更で困っている車",
+    body: "相続や名義変更の確認が必要な車も、書類状況を伺いながら次の進め方をご案内します。",
+    prompt: "所有者情報や書類の有無により対応内容が異なります。まずは状況をお聞かせください。",
+    canvaHeadline: "相続・名義変更の車\nまずはご相談ください",
+    canvaSubcopy: "書類状況を確認しながら進め方をご案内します",
+    hashtags: ["#相続車", "#名義変更"]
+  },
+  accident: {
+    label: "事故車向け",
+    title: "事故車の引き取り相談受付中",
+    subject: "事故車",
+    body: "事故後に動かしにくい車や修理予定のない車も、損傷状態と保管場所を確認してご案内します。",
+    prompt: "車両状態により対応内容が異なるため、まずは写真や状況をお知らせください。",
+    canvaHeadline: "事故車の引き取り\n相談受付中",
+    canvaSubcopy: "損傷状態・保管場所を確認してご案内します",
+    hashtags: ["#事故車", "#事故車相談"]
+  },
+  keiCar: {
+    label: "軽自動車向け",
+    title: "軽自動車の廃車相談受付中",
+    subject: "軽自動車",
+    body: "乗らなくなった軽自動車や車検切れの軽自動車も、状態を確認してご案内します。",
+    prompt: "年式や走行距離、書類状況をお知らせいただくと確認がスムーズです。",
+    canvaHeadline: "軽自動車の廃車\n相談受付中",
+    canvaSubcopy: "車検切れ・長期放置の軽自動車もご相談ください",
+    hashtags: ["#軽自動車", "#軽自動車廃車"]
+  },
+  sapporoCity: {
+    label: "札幌市内向け",
+    title: "札幌市内の廃車引き取り相談受付中",
+    subject: "札幌市内の廃車",
+    body: "札幌市内で乗らなくなった車や動かない車の引き取り相談を受け付けています。",
+    prompt: "区名や保管場所、車両状態を確認して対応可能か確認いたします。",
+    canvaHeadline: "札幌市内\n廃車引き取り相談受付中",
+    canvaSubcopy: "区名・保管場所・車両状態を確認してご案内します",
+    hashtags: ["#札幌廃車", "#札幌市"]
+  },
+  otaruYoichi: {
+    label: "小樽・余市方面向け",
+    title: "小樽・余市方面の廃車相談受付中",
+    subject: "小樽・余市方面の廃車",
+    body: "小樽・余市方面で動かない車や長く置いたままの車も、場所と状態を確認してご案内します。",
+    prompt: "地域や車両状態により対応内容が異なります。まずはご相談ください。",
+    canvaHeadline: "小樽・余市方面\n廃車相談受付中",
+    canvaSubcopy: "動かない車・長期放置車も状態を確認します",
+    hashtags: ["#小樽廃車", "#余市廃車"]
+  },
+  immobile: {
+    label: "不動車向け",
+    title: "不動車の引き取り相談受付中",
+    subject: "不動車",
+    body: "エンジンがかからない車や動かせない車も、搬出場所と状態を確認してご案内します。",
+    prompt: "駐車場所やタイヤの状態により対応内容が変わるため、まずは状況をお知らせください。",
+    canvaHeadline: "不動車の引き取り\n相談受付中",
+    canvaSubcopy: "搬出場所・車両状態を確認してご案内します",
+    hashtags: ["#不動車", "#不動車相談"]
+  },
+  longTerm: {
+    label: "長期放置車向け",
+    title: "長期放置車の引き取り相談受付中",
+    subject: "長期放置車",
+    body: "長く置いたままの車や処分のタイミングを逃した車も、状態を確認してご案内します。",
+    prompt: "書類状況や保管場所により対応内容が異なります。まずはご相談ください。",
+    canvaHeadline: "長期放置車\n引き取り相談受付中",
+    canvaSubcopy: "乗らなくなった車も状態を確認してご案内します",
+    hashtags: ["#長期放置車", "#放置車相談"]
+  },
+  urgent: {
+    label: "急ぎの相談向け",
+    title: "急ぎの廃車相談受付中",
+    subject: "急ぎで相談したい廃車",
+    body: "引っ越し前や駐車場返却前など、急ぎで相談したい車も状況を確認してご案内します。",
+    prompt: "日程・場所・車両状態により対応可能か確認いたします。早めに詳細をお知らせください。",
+    canvaHeadline: "急ぎの廃車相談\n受付中",
+    canvaSubcopy: "日程・場所・車両状態を確認してご案内します",
+    hashtags: ["#廃車相談", "#急ぎの相談"]
   }
 };
 
@@ -196,6 +304,11 @@ function blankRecord() {
     memo: "",
     areaPreset: "",
     serviceAreas: "",
+    appealPattern: "shakenExpired",
+    generatedCopies: "",
+    canvaHeadline: "",
+    canvaSubcopy: "",
+    canvaNote: "",
     recordType: ""
   };
 }
@@ -222,7 +335,7 @@ function areaSummary(areas) {
 }
 
 function bodyAreas(areas) {
-  const priority = ["小樽", "石狩", "江別", "北広島", "恵庭", "千歳", "余市", "道央エリア", "後志エリア"];
+  const priority = ["札幌", "小樽", "石狩", "江別", "北広島", "恵庭", "千歳", "余市", "道央エリア", "後志エリア"];
   return priority.filter((area) => areas.includes(area)).slice(0, 6).join("、");
 }
 
@@ -230,24 +343,51 @@ function areaHashtags(areas) {
   return areas.map((area) => `#${area.replace(/\s+/g, "")}`).join(" ");
 }
 
-function createPostCopy(media, areas) {
+function selectedAppealPattern(patternKey) {
+  return appealPatterns[patternKey] || appealPatterns.shakenExpired;
+}
+
+function selectedAreaHashtags(areas) {
+  const tags = areaHashtags(areas).split(" ").filter(Boolean);
+  return tags.slice(0, 8);
+}
+
+function createHashtags(pattern, areas) {
+  return ["#廃車引き取り", "#廃車相談", ...pattern.hashtags, ...selectedAreaHashtags(areas)].join(" ");
+}
+
+function createPostSet(patternKey, areas) {
+  const pattern = selectedAppealPattern(patternKey);
   const selectedAreas = uniqueAreas(areas);
   const summary = areaSummary(selectedAreas);
   const nearbyAreas = bodyAreas(selectedAreas);
-  const hashtags = ["#廃車引き取り", "#廃車買取", "#事故車相談", "#不動車相談", ...areaHashtags(selectedAreas).split(" ").filter(Boolean)].join(" ");
-  const lineBreak = media === "X" ? "\n" : "\n\n";
-  const commonLead = `${summary}で廃車引き取りのご相談を受け付けています。`;
+  const hashtags = createHashtags(pattern, selectedAreas);
   const nearbyText = nearbyAreas ? `対応エリアは${nearbyAreas}など。` : "対応エリアは札幌近郊・小樽近郊など。";
+  const safeNote = "車両状態・場所・書類状況により対応内容が異なります。";
+  const consultation = "まずはご相談ください。状態を確認してご案内します。";
 
-  if (media === "X") {
-    return `${commonLead}\n動かない車・車検切れ・乗り換え前の処分など、まずは状態をお知らせください。${nearbyText}\n${hashtags}`;
-  }
+  const instagram = `${summary}で${pattern.subject}のご相談を受け付けています。\n\n${pattern.body}${nearbyText}\n\n${pattern.prompt}\n${consultation}\n\n${hashtags}`;
+  const x = `${summary}で${pattern.subject}のご相談受付中。\n${pattern.body}${nearbyText}\n${consultation}\n${hashtags}`;
+  const line = `${summary}で${pattern.subject}についてお困りの方へ\n\n${pattern.body}\n${nearbyText}\n\n${pattern.prompt}\n対応可能か確認いたしますので、車両状態・場所・書類状況をお知らせください。\n\n${hashtags}`;
 
-  if (media === "LINE配信") {
-    return `${commonLead}${lineBreak}動かない車、車検切れ、乗らなくなった車の処分など、状況に合わせてご案内します。${nearbyText}${lineBreak}気になる方はLINEからお気軽にご相談ください。${lineBreak}${hashtags}`;
-  }
+  return {
+    Instagram: instagram,
+    X: x,
+    "LINE配信": line,
+    canvaHeadline: `${summary}\n${pattern.canvaHeadline}`,
+    canvaSubcopy: pattern.canvaSubcopy,
+    canvaNote: safeNote
+  };
+}
 
-  return `${commonLead}${lineBreak}動かない車・車検切れ・乗り換え前の処分など、まずはお車の状態をお知らせください。${nearbyText}${lineBreak}投稿では地名を入れすぎず、詳しい対応可否は個別にご案内します。${lineBreak}${hashtags}`;
+function createPostCopy(media, patternKey, areas) {
+  const postSet = createPostSet(patternKey, areas);
+  return postSet[media] || postSet.Instagram;
+}
+
+function createGeneratedCopies(patternKey, areas) {
+  const postSet = createPostSet(patternKey, areas);
+  return [`【Instagram用】\n${postSet.Instagram}`, `【X用】\n${postSet.X}`, `【LINE配信用】\n${postSet["LINE配信"]}`].join("\n\n---\n\n");
 }
 
 function loadRecords() {
@@ -380,8 +520,9 @@ function createField(field, values, config) {
   if (field === "serviceAreas") return createAreaPicker(values);
 
   const label = document.createElement("label");
-  const isLongText = field === "body" || field === "memo";
-  const input = field === "media" ? document.createElement("select") : isLongText ? document.createElement("textarea") : document.createElement("input");
+  const isLongText = ["body", "memo", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field);
+  const isSelect = field === "media" || field === "appealPattern";
+  const input = isSelect ? document.createElement("select") : isLongText ? document.createElement("textarea") : document.createElement("input");
   label.textContent = fieldLabels[field];
   input.name = field;
   input.value = values[field] ?? "";
@@ -390,8 +531,12 @@ function createField(field, values, config) {
   if (field === "media") {
     input.innerHTML = mediaOptions.map((media) => `<option value="${media}">${media}</option>`).join("");
     input.value = mediaOptions.includes(values[field]) ? values[field] : "Instagram";
+  } else if (field === "appealPattern") {
+    input.innerHTML = Object.entries(appealPatterns).map(([value, pattern]) => `<option value="${value}">${pattern.label}</option>`).join("");
+    input.value = appealPatterns[values[field]] ? values[field] : "shakenExpired";
   } else if (isLongText) {
-    input.rows = field === "body" ? 6 : 3;
+    input.rows = field === "generatedCopies" ? 12 : field === "body" ? 7 : field.startsWith("canva") ? 3 : 3;
+    if (["generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote"].includes(field)) label.classList.add("copy-output");
   } else if (inputType(field) === "number") {
     input.type = "number";
     input.min = "0";
@@ -400,6 +545,8 @@ function createField(field, values, config) {
     input.type = inputType(field);
   }
 
+  if (["body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote", "memo"].includes(field)) label.classList.add("full-span");
+
   label.appendChild(input);
   return label;
 }
@@ -407,22 +554,38 @@ function createField(field, values, config) {
 function syncPostCopy({ force = false } = {}) {
   if (currentView !== "posts") return;
   const mediaInput = entryForm.elements.media;
+  const patternInput = entryForm.elements.appealPattern;
   const titleInput = entryForm.elements.title;
   const bodyInput = entryForm.elements.body;
-  if (!mediaInput || !titleInput || !bodyInput) return;
+  const generatedCopiesInput = entryForm.elements.generatedCopies;
+  const canvaHeadlineInput = entryForm.elements.canvaHeadline;
+  const canvaSubcopyInput = entryForm.elements.canvaSubcopy;
+  const canvaNoteInput = entryForm.elements.canvaNote;
+  if (!mediaInput || !patternInput || !titleInput || !bodyInput) return;
 
   const selectedAreas = uniqueAreas([...entryForm.querySelectorAll('input[name="serviceAreaOptions"]:checked')].map((checkbox) => checkbox.value));
-  const generatedTitle = `${areaSummary(selectedAreas)}で廃車引き取りのご相談受付中`;
-  const generatedBody = createPostCopy(mediaInput.value, selectedAreas);
+  const pattern = selectedAppealPattern(patternInput.value);
+  const postSet = createPostSet(patternInput.value, selectedAreas);
+  const generatedTitle = `${areaSummary(selectedAreas)}で${pattern.title}`;
+  const generatedBody = createPostCopy(mediaInput.value, patternInput.value, selectedAreas);
+  const generatedCopies = createGeneratedCopies(patternInput.value, selectedAreas);
 
-  if (force || !titleInput.value.trim() || titleInput.dataset.autoGenerated === "true") {
-    titleInput.value = generatedTitle;
-    titleInput.dataset.autoGenerated = "true";
-  }
-  if (force || !bodyInput.value.trim() || bodyInput.dataset.autoGenerated === "true") {
-    bodyInput.value = generatedBody;
-    bodyInput.dataset.autoGenerated = "true";
-  }
+  const autoTargets = [
+    [titleInput, generatedTitle],
+    [bodyInput, generatedBody],
+    [generatedCopiesInput, generatedCopies],
+    [canvaHeadlineInput, postSet.canvaHeadline],
+    [canvaSubcopyInput, postSet.canvaSubcopy],
+    [canvaNoteInput, postSet.canvaNote]
+  ];
+
+  autoTargets.forEach(([input, value]) => {
+    if (!input) return;
+    if (force || !input.value.trim() || input.dataset.autoGenerated === "true") {
+      input.value = value;
+      input.dataset.autoGenerated = "true";
+    }
+  });
 }
 
 function renderForm(record = null) {
@@ -430,7 +593,7 @@ function renderForm(record = null) {
   const values = { ...blankRecord(), ...config.defaults, ...record };
   formEyebrow.textContent = editingId ? "保存済みデータを編集中" : config.eyebrow;
   formTitle.textContent = editingId ? "内容を編集" : config.title;
-  saveEntry.textContent = editingId ? "更新する" : "保存する";
+  saveEntry.textContent = editingId ? "更新する" : currentView === "posts" ? "投稿に追加" : "保存する";
   cancelEdit.hidden = !editingId;
   formFields.innerHTML = "";
 
@@ -442,6 +605,10 @@ function renderForm(record = null) {
   const bodyInput = entryForm.elements.body;
   if (titleInput) titleInput.dataset.autoGenerated = record?.title ? "false" : "true";
   if (bodyInput) bodyInput.dataset.autoGenerated = record?.body ? "false" : "true";
+  ["generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote"].forEach((field) => {
+    const input = entryForm.elements[field];
+    if (input) input.dataset.autoGenerated = record?.[field] ? "false" : "true";
+  });
   if (currentView === "posts" && !record) syncPostCopy({ force: true });
 }
 
@@ -481,7 +648,11 @@ function metaFor(record) {
   if (currentView === "posts") {
     return [
       ["媒体", record.media],
+      ["訴求パターン", selectedAppealPattern(record.appealPattern).label],
       ["投稿ステータス", record.postStatus],
+      ["Canva見出し", record.canvaHeadline],
+      ["Canvaサブコピー", record.canvaSubcopy],
+      ["Canva注意書き", record.canvaNote],
       ["Canva画像リンク", record.canvaUrl],
       ["対応エリア", record.serviceAreas || "未選択"],
       ["対応状況", record.responseStatus]
@@ -558,8 +729,8 @@ function renderList() {
 }
 
 function exportCsv() {
-  const header = ["投稿日", "媒体", "対応エリア", "投稿タイトル", "投稿本文", "Canva画像リンク", "投稿ステータス", "問い合わせ日", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "対応状況", "改善メモ"];
-  const rows = records.map((record) => [record.postedAt, record.media, record.serviceAreas, record.title, record.body, record.canvaUrl, record.postStatus, record.inquiryAt, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.responseStatus, record.memo]);
+  const header = ["投稿日", "媒体", "訴求パターン", "対応エリア", "投稿タイトル", "投稿本文", "Instagram/X/LINE用作成文", "Canva見出し", "Canvaサブコピー", "Canva注意書き", "Canva画像リンク", "投稿ステータス", "問い合わせ日", "問い合わせ内容", "作業予定日", "作業内容", "売上金額", "原価", "利益", "対応状況", "改善メモ"];
+  const rows = records.map((record) => [record.postedAt, record.media, selectedAppealPattern(record.appealPattern).label, record.serviceAreas, record.title, record.body, record.generatedCopies, record.canvaHeadline, record.canvaSubcopy, record.canvaNote, record.canvaUrl, record.postStatus, record.inquiryAt, record.inquiry, record.workDate, record.workDetail, record.sales, record.cost, profit(record), record.responseStatus, record.memo]);
   const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
   const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -571,7 +742,7 @@ function exportCsv() {
 }
 
 entryForm.addEventListener("input", (event) => {
-  if (["title", "body"].includes(event.target.name)) event.target.dataset.autoGenerated = "false";
+  if (["title", "body", "generatedCopies", "canvaHeadline", "canvaSubcopy", "canvaNote"].includes(event.target.name)) event.target.dataset.autoGenerated = "false";
 });
 
 entryForm.addEventListener("change", (event) => {
@@ -583,10 +754,10 @@ entryForm.addEventListener("change", (event) => {
     syncPostCopy({ force: true });
   }
 
-  if (["serviceAreaOptions", "media"].includes(event.target.name)) {
+  if (["serviceAreaOptions", "media", "appealPattern"].includes(event.target.name)) {
     const presetSelect = entryForm.elements.areaPreset;
     if (event.target.name === "serviceAreaOptions" && presetSelect) presetSelect.value = "";
-    syncPostCopy();
+    syncPostCopy({ force: event.target.name === "appealPattern" });
   }
 });
 
