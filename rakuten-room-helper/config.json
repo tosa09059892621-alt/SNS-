@@ -1,0 +1,79 @@
+{
+  "daily_limit": 3,
+  "max_price": 10000,
+  "preferred_min_price": 1000,
+  "preferred_max_price": 5000,
+  "weekday_genres": {
+    "0": "日用品・キッチン",
+    "1": "スマホガジェット",
+    "2": "車用品",
+    "3": "家族向け・節約",
+    "4": "週末便利グッズ",
+    "5": "レジャー・洗車",
+    "6": "ストック・時短グッズ"
+  },
+  "disallowed_genres": ["アダルト", "ギャンブル", "危険物", "医療", "健康", "美容"],
+  "blocked_phrases": ["絶対買うべき", "最安値確定", "必ず効果がある", "これだけで解決", "誰でも稼げる"],
+  "sample_candidates": [
+    {
+      "item_name": "車載スマホホルダー 角度調整タイプ",
+      "item_url": "https://example.com/rakuten/car-smartphone-holder",
+      "genre": "車用品",
+      "price": 2480,
+      "review": "4.3 / 320件",
+      "stock": "要手動確認",
+      "shop": "カー用品ショップ例",
+      "reason": "車内でスマホの置き場所を決めやすく、家族の送迎や週末の移動と相性が良い小物です。",
+      "target": "車移動が多い人、スマホナビを使う人",
+      "check_points": "対応スマホサイズ、固定方式、ダッシュボード形状を投稿前に確認してください。"
+    },
+    {
+      "item_name": "急速充電対応 USB-C ケーブル 2本セット",
+      "item_url": "https://example.com/rakuten/usb-c-cable-set",
+      "genre": "スマホガジェット",
+      "price": 1280,
+      "review": "4.5 / 1,120件",
+      "stock": "要手動確認",
+      "shop": "スマホ雑貨ショップ例",
+      "reason": "家用・車用で分けやすく、スマホやiPadをよく使う人の予備ケーブルとして使いやすい商品です。",
+      "target": "スマホやiPadの充電ケーブルをよく使う人",
+      "check_points": "端子、長さ、対応ワット数、手持ち充電器との相性を確認してください。"
+    },
+    {
+      "item_name": "折りたたみ収納ボックス 車内・自宅兼用",
+      "item_url": "https://example.com/rakuten/folding-storage-box",
+      "genre": "家族向け・節約",
+      "price": 2980,
+      "review": "4.2 / 540件",
+      "stock": "要手動確認",
+      "shop": "生活雑貨ショップ例",
+      "reason": "車内の荷物整理や家のストック収納に使いやすく、家族持ちの整理整頓に向いています。",
+      "target": "車内や家の小物をまとめたい人",
+      "check_points": "サイズ、耐荷重、折りたたみ時の厚みを確認してください。"
+    },
+    {
+      "item_name": "キッチン用 シリコン保存バッグ セット",
+      "item_url": "https://example.com/rakuten/silicone-storage-bag",
+      "genre": "日用品・キッチン",
+      "price": 1680,
+      "review": "4.1 / 260件",
+      "stock": "要手動確認",
+      "shop": "キッチン用品ショップ例",
+      "reason": "食品保存や小物整理に使いやすく、使い捨て袋を減らしたい家庭向けです。",
+      "target": "作り置きや節約を意識する家庭",
+      "check_points": "容量、耐熱温度、食洗機対応の有無を確認してください。"
+    },
+    {
+      "item_name": "マイクロファイバー洗車タオル 5枚セット",
+      "item_url": "https://example.com/rakuten/car-wash-towel-set",
+      "genre": "レジャー・洗車",
+      "price": 1180,
+      "review": "4.4 / 890件",
+      "stock": "要手動確認",
+      "shop": "洗車用品ショップ例",
+      "reason": "週末の洗車や車内清掃に使いやすく、消耗品としてストックしやすい価格帯です。",
+      "target": "自宅で洗車や車内清掃をする人",
+      "check_points": "サイズ、枚数、吸水性レビューを確認してください。"
+    }
+  ]
+}

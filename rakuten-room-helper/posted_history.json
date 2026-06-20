@@ -1,0 +1,29 @@
+[
+  {
+    "date": "2026-06-20",
+    "item_name": "マイクロファイバー洗車タオル 5枚セット",
+    "item_url": "https://example.com/rakuten/car-wash-towel-set",
+    "genre": "レジャー・洗車",
+    "shop": "洗車用品ショップ例",
+    "status": "candidate",
+    "reason": "週末の洗車や車内清掃に使いやすく、消耗品としてストックしやすい価格帯です。"
+  },
+  {
+    "date": "2026-06-20",
+    "item_name": "急速充電対応 USB-C ケーブル 2本セット",
+    "item_url": "https://example.com/rakuten/usb-c-cable-set",
+    "genre": "スマホガジェット",
+    "shop": "スマホ雑貨ショップ例",
+    "status": "candidate",
+    "reason": "家用・車用で分けやすく、スマホやiPadをよく使う人の予備ケーブルとして使いやすい商品です。"
+  },
+  {
+    "date": "2026-06-20",
+    "item_name": "キッチン用 シリコン保存バッグ セット",
+    "item_url": "https://example.com/rakuten/silicone-storage-bag",
+    "genre": "日用品・キッチン",
+    "shop": "キッチン用品ショップ例",
+    "status": "candidate",
+    "reason": "食品保存や小物整理に使いやすく、使い捨て袋を減らしたい家庭向けです。"
+  }
+]
